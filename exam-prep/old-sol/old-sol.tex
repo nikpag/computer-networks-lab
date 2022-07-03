@@ -1,0 +1,246 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Λύσεις παλιών θεμάτων
+}
+
+\author{Νίκος Παγώνας}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{}
+	Θα διαγραφεί από τον πίνακα δρομολόγησης.
+	
+\section{}
+	ifconfig em0 inet6 fd00:2001::1/64.
+
+\section{}
+	show ip bgp summary
+
+\section{}
+	\textcolor{red}{Δεν την προσθέτει στην RIB}
+
+\section{}
+	Ώστε τελικά όλοι να αποκτήσουν την ίδια γνώση για τις διαδρομές.
+
+\section{}
+	Default και Intra-area.
+
+\section{}
+	Established.
+
+\section{}
+	Επειδή σε όλες τις διεπαφές οι τοπικές στη ζεύξη (link-local) διευθύνσεις έχουν όλες το ίδιο
+	πρόθεμα δικτύου (fe80::/64).
+
+\section{}
+	\textcolor{red}{Θα αγνοήσει τη νέα διαδρομή}
+
+\section{}
+	Διότι θα μπορούσε κάποιος που γνωρίζει την τοπολογία του δικτύου να θέσει επίτηδες την κατάλληλη τιμή ώστε να φαίνεται πως το πακέτο προέρχεται από δρομολογητή.
+
+\section{}
+	tcpdump -i em0 "tcp and dst 10.0.10.10 and src port 22"
+
+\section{}
+	Την απορρίπτει και δεν την γράφει στην RIB.
+
+\section{}
+	2-way.
+
+\section{}
+	show ip bgp neighbors 192.168.2.1 routes
+
+\section{}
+	Εάν δεν υπάρξει αλλαγή για 30 min σε κάποια κατάσταση ζεύξης, ο δρομολογητής που παρήγαγε
+	το σχετικό LSA, αναπαράγει την ενημέρωση και την ξαναστέλνει.
+
+\section{}
+	neighbor 192.168.3.2 remote-as 65020
+
+\section{}
+	Τα διαβιβαστικά έχουν δύο ή περισσότερους δρομολογητές OSPF και τα πακέτα μπορούν να πηγάζουν ή διέρχονται από αυτά, ενώ τα δίκτυα απολήξεις έχουν ένα μόνο δρομολογητή OSPF και τα πακέτα είτε πηγάζουν είτε καταλήγουν σε αυτά.
+
+\section{}
+	show ip bgp neighbors 192.168.2.1 advertised-routes
+
+\section{}
+	Οι ABR περιοχής που περιέχει ένα ASBR
+
+\section{}
+	172.17.0.0/16, 172.18.0.0/17, 172.19.0.0/18
+
+\section{}
+	ORIGIN, AS\_PATH και NEXT\_HOP
+
+\section{}
+	show ip bgp
+
+\section{}
+	TCP @ 179
+
+\section{}
+	Επιλεγμένες
+
+\section{}
+	Το πακέτο πέρασε από δρομολογητή ο οποίος δεν είχε στον πίνακα δρομολόγησης εγγραφή σχετική με τον προορισμό, ή έχουμε την περίπτωση traceroute με ICMP μηνύματα.
+
+\section{}
+	RIP 120, Internal BGP 200, OSPF 110, External BGP 20
+
+\section{}
+	\textcolor{red}{...}
+
+\section{}
+	default-information originate
+
+\section{}
+	Intra-area, Inter-area και Default
+
+\section{}
+	True
+
+\section{}
+	network 192.168.2.0/24 area 2
+
+\section{}
+	Δεν λαμβάνεται απάντηση από τον προορισμό, οπότε θεωρείται ότι είναι ανενεργός.
+
+\section{}
+	\textcolor{red}{...}
+
+\section{}
+	route add default 172.17.17.4
+
+\section{}
+	τους γείτονές του και αυτόν από όπου έλαβε την ενημέρωση
+
+\section{}
+	ifconfig em0 192.168.2.1/24
+
+\section{}
+	τον τύπο πηγής ORIGIN
+
+\section{}
+	route -6 add default fd02:2002::1
+
+\section{}
+	δεν στέλνει BPDU
+
+\section{}
+	Διεπαφή 64, δίκτυο 64
+
+\section{}
+	Δεν υπάρχει εγγραφή σχετική με τον προορισμό στον πίνακα δρομολόγησης, ούτε προκαθορισμένη διαδρομή.
+
+\section{}
+	802.3
+
+\section{}
+	Η διαδικασία συγχρονισμού στην περίπτωση
+	λειτουργίας πολλών δρομολογητών εντός ενός υποδικτύου τύπου εκπομπής θα ήταν μη αποδοτική. Ο επιλεγμένος δρομολογητής έχει τον ειδικό ρόλο της διάδοσης μέσω αυτού όλων των ενημερώσεων. Σε περίπτωση αστοχίας του αναλαμβάνει το έργο αυτό ο BDR.
+
+\section{}
+	show ip route bgp
+
+\section{}
+	tcpdump -i em0 "tcp port 179"
+
+% 46
+\section{}
+	\begin{verbatim}
+		R2:
+	
+		ASBR - yes
+		backbone - yes
+		ABR - yes
+		BDR - no
+		DR - yes
+		internal - no  
+	\end{verbatim}
+
+% 47
+\section{}
+	\begin{verbatim}
+		R4:
+		
+		192.0.2.48/28 ---
+		192.0.2.16/28 C
+		192.0.2.192/26 C
+		192.0.2.128/26 --- 
+		192.0.2.32/28 --- 
+		0.0.0.0/0 --- 
+		192.0.2.64/26 R
+		192.0.2.0/28 C
+	\end{verbatim}
+
+% 48
+\section{}
+	\begin{verbatim}
+		R3:
+		
+		192.0.2.48/28 ---
+		192.0.2.32/28 C
+		192.0.2.128/26 C
+		192.0.2.0/28 R
+		192.0.2.192/26 R 
+		0.0.0.0/0 ---
+		192.0.2.64/26 O 
+		192.0.2.16/28 C
+	\end{verbatim}
+
+% 49 
+\section{}
+	\begin{verbatim}
+		R2:
+		
+		0.0.0.0/0 B
+		192.0.2.48/28 C 
+		192.0.2.64/26 C
+		192.0.2.32/28 C
+		192.0.2.128/26 O
+		192.0.2.16/28 ---
+		192.0.2.0/28 O
+		192.0.2.192/26 O 
+	\end{verbatim}	
+
+% 50
+\section{}
+	ip address 192.0.8.1/24
+
+% 51
+\section{}
+	N/A
+	
+
+% 52
+\section{}
+	N/A
+	
+% 53
+\section{}
+	\begin{verbatim}
+		R3:
+	
+		DR - no 
+		ABR - yes
+		ASBR - yes
+		internal - no 
+		BDR - yes
+		backbone - yes
+	\end{verbatim}
+
+% 54
+\section{}
+	Router, Network, Summary
+\end{document}

@@ -1,0 +1,1550 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Εργαστηριακή Άσκηση 8 \\ 
+	Δυναμική δρομολόγηση OSPF
+}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{center}
+	\begin{tabular}{|l|l|}
+		\hline
+		\textbf{Ονοματεπώνυμο:} Νικόλαος Παγώνας, el18175  & \textbf{Όνομα PC:} nick-ubuntu \\
+		\hline
+		\textbf{Ομάδα:} 1 (Τρίτη 10:45) & \textbf{Ημερομηνία Εξέτασης:} Τρίτη 04/05/2022 \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\section*{Προετοιμασία στο σπίτι}
+	\subsection*{1}
+		Εκτελούμε \verb|service frr stop|.
+	
+	\subsection*{2}
+		Εκτελούμε \verb|touch /usr/local/etc/frr/ospfd.conf|.
+		
+	\subsection*{3}
+		Εκτελούμε \verb|chown frr:frr /usr/local/etc/frr/ospfd.conf|.
+		
+	\subsection*{4}
+		Αλλάζουμε τη ζητούμενη γραμμή του \verb|/etc/rc.conf| σε:
+		
+		\begin{verbatim}
+			frr_daemons="zebra staticd ripd ospfd"
+		\end{verbatim}
+		
+	\subsection*{5}
+		Εκτελούμε \verb|service frr start|.
+		
+	\subsection*{6}
+		Εκτελούμε \verb|poweroff| και κάνουμε Export Appliance σε ένα αρχείο \verb|OSPF.ova| για μελλοντική χρήση.
+		
+\section*{Άσκηση 1: Εισαγωγή στο OSPF}
+
+	\subsection*{1.1}
+		Στο PC1 εκτελούμε:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			
+			hostname PC1
+			
+			interface em0
+			ip address 192.168.1.2/24
+			
+			ip route 0.0.0.0/0 192.168.1.1
+		\end{verbatim}
+
+	\subsection*{1.2}
+		Στο PC2 εκτελούμε:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			
+			hostname PC2
+			
+			interface em0
+			ip address 192.168.2.2/24
+			
+			ip route 0.0.0.0/0 192.168.2.1
+		\end{verbatim}
+
+	\subsection*{1.3}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			cli
+			configure terminal
+			
+			hostname R1
+			
+			interface em0
+			ip address 192.168.1.1/24
+			
+			interface em1
+			ip address 172.17.17.1/30
+		\end{verbatim}
+
+	\subsection*{1.4}
+		Στον R1 εκτελούμε \verb|do show ip route|. Δεν εμφανίζεται καμία στατική εγγραφή.
+
+	\subsection*{1.5}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			exit     # To enter global configuration mode
+			router ?
+		\end{verbatim}
+		
+		Το πρωτόκολλο OSPF είναι διαθέσιμο.
+
+	\subsection*{1.6}
+		Στον R1 εκτελούμε \verb|router ospf|.
+
+	\subsection*{1.7}
+		Στον R1 πατάμε το πλήκτρο \verb|"?"|. Εμφανίζονται 24 διαθέσιμες εντολές.
+
+	\subsection*{1.8}
+		Στον R1 εκτελούμε \verb|network 192.168.1.0/24 area 0|.
+
+	\subsection*{1.9}
+		Στον R1 εκτελούμε \verb|network 172.17.17.0/30 area 0|.
+
+	\subsection*{1.10}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			exit
+			do show ip route
+		\end{verbatim}
+		
+		Βλέπουμε ότι έχουν προστεθεί δύο εγγραφές στον πίνακα δρομολόγησης:
+		
+		\begin{verbatim}
+			O   172.17.17.0/30 [110/10] is directly connected, em1
+			O   192.168.1.0/24 [110/10] is directly connected, em0
+		\end{verbatim}
+
+	\subsection*{1.11}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			1.3
+			
+			cli
+			configure terminal
+		
+			hostname R2
+			
+			interface em0
+			ip address 172.17.17.2/30
+			
+			interface em1
+			ip address 192.168.2.1/24
+			
+			1.4
+			
+			do show ip route                 # OK, no static records found
+			
+			1.5
+			
+			exit # To enter global configuration mode
+			router ?                         # OPSF protocol is available
+			
+			1.6
+			
+			router ospf
+			
+			1.7
+			
+			"?"                              # 24 commands available
+			
+			1.8
+			
+			network 192.168.2.0/24 area 0
+			
+			1.9
+			
+			network 172.17.17.0/30 area 0
+		\end{verbatim}
+
+		Τέλος από τον PC1 εκτελούμε \verb|do ping 192.168.2.2|. Τα PC1,2 επικοινωνούν κανονικά.
+	
+	\subsection*{1.12}
+		Χαρακτηρίζονται ως εσωτερικοί δρομολογητές και ως δρομολογητές κορμού, αφού έχουν όλες τις διεπαφές τους στην περιοχή 0.
+
+	\subsection*{1.13}
+		Με την εντολή \verb|do show ip route|. Έχουν προστεθεί τρεις νέες εγγραφές:
+		
+		\begin{verbatim}
+			O   172.17.17.0/30 [110/10] is directly connected, em0
+			O>* 192.168.1.0/24 [110/20] via 172.17.17.1, em0
+			O   192.168.2.0/24 [110/10] is directly connected, em1
+		\end{verbatim}
+
+	\subsection*{1.14}
+		Ξεχωρίζουν από το γράμμα \verb|"O"| στην αρχή της γραμμής.
+
+	\subsection*{1.15}
+		Δηλώνονται με το σύμβολο \verb|"*"| στην αρχή της γραμμής.
+
+	\subsection*{1.16}
+		Η διαχειριστική απόσταση των διαδρομών OSPF είναι 110, και εμφανίζεται μέσα σε αγκύλες στη μορφή \verb|[administrative distance/route length]|.
+
+	\subsection*{1.17}
+		Έχει επιλεχθεί διότι το WAN1 είναι άμεσα συνδεδεμένο στον R2 μέσω της διεπαφής em0, οπότε αυτή η επιλογή υπερισχύει όλων των υπολοίπων (διαχειριστική απόσταση 0).
+
+	\subsection*{1.18}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			exit
+			exit
+			netstat -rn
+		\end{verbatim}
+		
+		Μπορούμε να καταλάβουμε ότι η εγγραφή:
+		
+		\begin{verbatim}
+			Destination       Gateway        Flags    Netif
+			192.168.1.0/24    172.17.17.1    UG1      em0
+		\end{verbatim}
+		
+		είναι δυναμική, επειδή στις σημαίες υπάρχει το σύμβολο \verb|"1"|.
+
+	\subsection*{1.19}
+		Στον R1 σε νέο παράθυρο εκτελούμε:
+		
+		\begin{verbatim}
+			tcpdump -vni em0
+		\end{verbatim}
+		
+		και περιμένουμε τουλάχιστον μισό λεπτό.
+
+	\subsection*{1.20}
+		Η διεύθυνση πηγής είναι \verb|192.168.1.1| (R1@em0)
+
+	\subsection*{1.21}
+		Η διεύθυνση προορισμού είναι \verb|224.0.0.5| μία multicast διεύθυνση που χρησιμοποιείται από το OSPF. Σε αυτήν ακούνε όλοι οι OSPF δρομολογητές, και σε αυτήν αποστέλλονται τα πακέτα Hello.
+	
+	\subsection*{1.22}
+	
+	\begin{itemize}
+		\item Πρωτόκολλο στρώματος δικτύου: IPv4
+		\item Αριθμός πρωτοκόλλου ανωτέρου στρώματος: 89
+	\end{itemize}
+
+	\subsection*{1.23}
+		Έχει τιμή 1.
+
+	\subsection*{1.24}
+		Είναι πακέτα Hello, τα οποία ανήκουν στην περιοχή Backbone (0).
+
+	\subsection*{1.25}
+		Τα βλέπουμε κάθε 10 δευτερόλεπτα, όσο δηλαδή και η τιμή του Hello Timer. Το Dead Timer έχει τιμή 40 δευτερόλεπτα (τυπικά είναι 4 φορές η τιμή του Hello Timer).
+
+	\subsection*{1.26}
+		Είναι \verb|192.168.1.1|. Προκύπτει ως εξής:
+		
+		\begin{itemize}
+			\item Ο R1 δεν έχει διεπαφή loopback.
+			\item Έτσι, επιλέγει την τιμή της υψηλότερης διεύθυνσης από τις φυσικές του διεπαφές.
+			\item Η em0 έχει την υψηλότερη διεύθυνση, οπότε επιλέγεται το \verb|192.168.1.1| σαν Router-ID.
+		\end{itemize}
+
+	\subsection*{1.27}
+		Είναι ο R1 (\verb|192.168.1.1|). Δεν υπάρχει Backup Designated Router.
+
+	\subsection*{1.28}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em1| και περιμένουμε τουλάχιστον μισό λεπτό. Παρατηρούμε αποστολή μηνυμάτων OSPF Hello από τον R1 με IP διεύθυνση πηγής την \verb|172.17.17.1|.
+
+	\subsection*{1.29} 
+		Ναι, παρατηρούμε, με διεύθυνση πηγής την \verb|172.17.17.2|. Το Router-ID του R2 είναι \verb|192.168.2.1|.
+
+	\subsection*{1.30}
+		Αφορά τη διεύθυνση της διεπαφής από την οποία προήλθε το μήνυμα Hello.
+
+	\subsection*{1.31}
+		Περιλαμβάνουν επιπλέον πληροφορία για τον Backup Designated Router και για το Neighbor List. Αυτό συμβαίνει διότι στη ζεύξη WAN1 υπάρχουν δύο δρομολογητές, οπότε δημιουργείται σχέση γειτνίασης, ενώ στη ζεύξη LAN1 υπάρχει μόνο ένας.
+
+	\subsection*{1.32}
+		Όχι, δεν περιλαμβάνονται διαφημίσεις δικτύων όπως στο RIP.
+
+	\subsection*{1.33}
+		Και οι δύο δρομολογητές δίνουν προτεραιότητα 1 στα πακέτα OSPF Hello.
+
+	\subsection*{1.34}
+		\begin{verbatim}
+			WAN1
+			Designated Router: 172.17.17.1
+			Backup Designated Router: 172.17.17.2
+		\end{verbatim}
+		
+		Οι τιμές είναι οι αναμενόμενες, αφού ενεργοποιήσαμε το OSPF στο WAN1 πρώτα για τον R1, οπότε επιλέχθηκε ως Designated Router. Παρά το γεγονός ότι ο R2 έχει ίδια προτεραιότητα και μεγαλύτερο Router-ID, δεν επιλέγεται ως DR. Για να επιλεγεί ως DR, θα πρέπει να έχουμε απώλεια της αντίστοιχης διεπαφής του R1. Έτσι ο R2 επιλέγεται ως BDR.
+		
+	\subsection*{1.35}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			passive-interface em0
+		\end{verbatim}
+		
+		Αντίστοιχα στον R2:
+		
+		\begin{verbatim}
+			router ospf
+			passive-interface em1
+		\end{verbatim}
+
+	\subsection*{1.36}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:
+			tcpdump -vni em0
+			
+			R2:
+			tcpdump -vni em1
+		\end{verbatim}
+		
+		και περιμένουμε τουλάχιστον μισό λεπτό. Επιβεβαιώνουμε ότι έχει σταματήσει η αποστολή πακέτων στα LAN1 και LAN2.
+		
+	\subsection*{1.37}
+		Η λειτουργία του δικτύου δεν επηρεάζεται, αφού οι μόνοι δρομολογητές του δικτύου είναι οι R1 και R2, δηλαδή στις ζεύξεις LAN1 και LAN2 υπάρχει μόνο ένας δρομολογητής κάθε φορά, οπότε δεν γίνεται καμία σύναψη γειτνίασης.
+
+\section*{Άσκηση 2: Λειτουργία του OSPF}
+
+	\subsection*{2.1}
+		Με την εντολή: 
+				
+		\begin{verbatim}
+			router-id <IPv4 address>
+		\end{verbatim}
+
+	\subsection*{2.2}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:
+			router ospf
+			router-id 0.0.0.1
+			
+			R2:
+			router ospf
+			router-id 0.0.0.2
+		\end{verbatim}
+
+	\subsection*{2.3}
+		Στον R1 εκτελούμε \verb|do show ip ospf|. Το Router-ID του είναι \verb|0.0.0.1|, ανήκει σε μία περιοχή, την Backbone με Area-ID \verb|0.0.0.0| και η LSDB του περιέχει 3 LSA.
+
+	\subsection*{2.4}
+		Στον R1 εκτελούμε \verb|do show ip ospf neighbor|. Το OSPF έχει συγκλίνει επειδή βλέπουμε ότι το State είναι \verb|Full|, και επιπλέον ο γείτονας είναι DR.
+
+	\subsection*{2.5}
+		Εκτελούμε διαδοχικά \verb|do show ip ospf neighbor| στον R1. Το Dead Time είναι ο χρόνος που αν λήξει, ο δρομολογητής θεωρεί ότι ο γείτονας είναι ανενεργός, και παύει η γειτνίαση με τον γείτονα αυτόν. Ανανεώνεται στην προεπιλεγμένη τιμή των 40 δευτερολέπτων κάθε φορά που ο δρομολογητής λαμβάνει ένα μήνυμα Hello από τον γείτονα, και επειδή μηνύματα Hello στέλνονται κάθε 10 δευτερόλεπτα (προεπιλεγμένη τιμή), το Dead Time δεν προλαβαίνει να φτάσει κάτω από 30 δευτερόλεπτα, γι' αυτό και κυμαίνεται μεταξύ 30 και 40 δευτερολέπτων.
+
+	\subsection*{2.6}
+		Με την σύνταξη \verb|do show ip ospf neighbor detail|.
+
+	\subsection*{2.7}
+		Εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			do show ip ospf interface em1
+		\end{verbatim}
+		
+		Έχουμε:
+		
+		\begin{itemize}
+			\item Είδος δικτύου: Broadcast
+			\item DR: R2 (\verb|0.0.0.2|)
+			\item BDR: R1 (\verb|0.0.0.1|)
+		\end{itemize}
+
+		Βλέπουμε ότι DR είναι πλέον ο R2, και όχι ο R1 όπως στο ερώτημα 1.34, αφού με την αλλαγή των Router-ID το OSPF ανιχνεύει δύο δρομολογητές με ίδιο priority στη ζεύξη WAN1, οπότε αφού ο R2 έχει μεγαλύτερο Router-ID επιλέγεται αυτός ως DR και ο R2 ως BDR.
+		
+	\subsection*{2.8}
+		Στις ομάδες \verb|OSPFAllRouters| και \verb|OSPFDesignatedRouters|.
+
+	\subsection*{2.9}
+		Στους R1 και R2 εκτελούμε \verb|do show ip ospf database|. Βλέπουμε 2 Router και 1 Network LSA. Το αποτέλεσμα είναι ίδιο και στους δύο δρομολογητές. 
+
+	\subsection*{2.10}
+		Τα Router LSA έχουν Link ID \verb|0.0.0.1| ή \verb|0.0.0.2|, τα οποία ταυτίζονται με το Router ID του δρομολογητή που τα παράγει.
+
+	\subsection*{2.11}
+		Το Link ID των Network LSA είναι \verb|172.17.17.2|. Δεν είναι το Router ID του δρομολογητή που τα παράγει, αλλά η IP διεύθυνση της διεπαφής του DR στο WAN1.
+
+	\subsection*{2.12}
+		Με την εντολή: 
+		
+		\begin{verbatim}
+			do show ip ospf database router adv-router 0.0.0.1
+		\end{verbatim}
+
+	\subsection*{2.13}
+		Το LAN1 χαρακτηρίζεται ως Stub Network, επειδή έχει μόνο έναν OSPF δρομολογητή, ενώ το WAN1 ως Transit Network, επειδή έχει δύο δρομολογητές OSPF.
+
+	\subsection*{2.14}
+		Με την εντολή:
+		
+		\begin{verbatim}
+			do show ip ospf network adv-router 0.0.0.2
+		\end{verbatim}
+
+	\subsection*{2.15}
+		Εμφανίζεται:
+		
+		\begin{verbatim}
+			Attached Router: 0.0.0.1
+			Attached Router: 0.0.0.2
+		\end{verbatim}
+
+	\subsection*{2.16}
+		Στους R1 και R2 εκτελούμε \verb|do show ip ospf route|. Βλέπουμε 3 εγγραφές που ανήκουν στην περιοχή \verb|0.0.0.0|.
+
+	\subsection*{2.17}
+		Είναι:
+		
+		\begin{verbatim}
+			R1:
+			172.17.17.0/30, Cost 10
+			192.168.1.0/24, Cost 10
+			192.168.2.0/24, Cost 20
+			
+			R2:
+			172.17.17.0/30, Cost 10
+			192.168.1.0/24, Cost 20
+			192.168.2.0/24, Cost 10
+		\end{verbatim}
+		
+		Ύστερα εκτελούμε στους R1 και R2:
+		
+		\begin{verbatim}
+			do show ip route ospf
+		\end{verbatim}
+		
+		Παρατηρούμε ότι τα κόστη ταυτίζονται (υπενθυμίζουμε ότι το κόστος είναι ο δεύτερος αριθμός μέσα σε αγκύλες).
+
+	\subsection*{2.18}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em1
+			bandwidth 100000
+		\end{verbatim}
+
+	\subsection*{2.19}
+		Στον R1 εκτελούμε \verb|do show ip ospf interface em1| και βλέπουμε το πεδίο Cost, που τώρα έχει γίνει ίσο με 1.
+
+	\subsection*{2.20}
+		Εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Παρατηρούμε ότι έχουν αλλάξει τα κόστη:
+		
+		\begin{verbatim}
+			172.17.17.0/30, Cost 10 --> 1
+			192.168.2.0/24, Cost 20 --> 11
+		\end{verbatim}
+
+	\subsection*{2.21}
+		Εκτελούμε στον R2:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Το κόστος προς το LAN1 παραμένει 20, γιατί δεν έχουμε αλλάξει την ταχύτητα της διεπαφής του R2 στο WAN1. 
+
+	\subsection*{2.22}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			bandwidth 100000
+		\end{verbatim}
+
+	\subsection*{2.23}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em1|.
+
+	\subsection*{2.24}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			no network 192.168.2.0/24 area 0
+		\end{verbatim}
+
+	\subsection*{2.25}
+		Παρατηρούμε να παράγονται πακέτα LS-Update από τον R2 και πακέτα LS-Ack από τον R1, χωρίς καθυστέρηση.
+
+	\subsection*{2.26}
+		Στους R1 και R2 εκτελούμε \verb|do show ip ospf route|. Παρατηρούμε ότι αφαιρέθηκε η εγγραφή για το δίκτυο \verb|192.168.2.0/24| και στους δύο δρομολογητές. \\
+		
+		Στον PC1 εκτελούμε \verb|do ping 192.168.2.2|. Δεν υπάρχει επικοινωνία μεταξύ PC1 και PC2, αφού εμφανίζεται μήνυμα Destination Host Unreachable.
+
+	\subsection*{2.27}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em1|. Δεν έχει σταματήσει η αποστολή μηνυμάτων OSPF το WAN1, αφού οι R1 και R2 συνεχίζουν να διατηρούν τη γειτνίασή τους (το OSPF είναι ακόμα ενεργοποιημένο στους R1, R2).
+
+	\subsection*{2.28}
+		Στον R2 εκτελούμε \verb|network 192.168.2.0/24 area 0|. Παρατηρούμε πάλι μήνυμα LS-Update από τον R2, που ενημερώνει για το δίκτυο που επανεισήχθη στο OSPF, και αντίστοιχο μήνυμα LS-Ack από τον R1.
+
+
+\section*{Άσκηση 3: Εναλλακτικές διαδρομές, σφάλμα καλωδίου και OSPF}
+
+	\subsection*{3.1}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			cli
+			configure terminal
+			
+			hostname R3
+			
+			interface em0
+			ip address 172.17.17.6/30
+			
+			interface em1
+			ip address 172.17.17.10/30
+		\end{verbatim}
+
+	\subsection*{3.2}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em2
+			ip address 172.17.17.5/30
+		\end{verbatim}
+		
+		Ενώ στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em2
+			ip address 172.17.17.9/30
+		\end{verbatim}
+
+	\subsection*{3.3}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			R2:			
+			interface em0
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			R3:
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+		\end{verbatim}
+
+	\subsection*{3.4}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:
+			interface em1
+			ospf network point-to-point
+			
+			interface em2
+			ospf network point-to-point
+			
+			R2:
+			interface em0
+			ospf network point-to-point
+			
+			interface em2
+			ospf network point-to-point
+			
+			R3:
+			interface em0
+			ospf network point-to-point
+			
+			interface em1
+			ospf network point-to-point
+		\end{verbatim}
+
+	\subsection*{3.5}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			network 172.17.17.4/30 area 0
+		\end{verbatim}
+
+	\subsection*{3.6}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			network 172.17.17.8/30 area 0
+		\end{verbatim}
+
+	\subsection*{3.7}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			router-id 0.0.0.3
+			
+			network 0.0.0.0/0 area 0
+		\end{verbatim}
+
+	\subsection*{3.8}
+		Στον R1 εκτελούμε \verb|do show ip ospf route|. Έχουμε:
+		
+		\begin{verbatim}
+			Network          Cost
+			127.0.0.1/32     20
+			172.17.17.0/30   1
+			172.17.17.4/30   10
+			172.17.17.8/30   11
+			192.168.1.0/24   10
+			192.168.2.0/24   11
+		\end{verbatim}
+
+	\subsection*{3.9}
+		Στον R2 εκτελούμε \verb|do show ip ospf route|. Έχουμε:
+		
+		\begin{verbatim}
+			Network          Cost
+			127.0.0.1/32     20
+			172.17.17.0/30   1
+			172.17.17.4/30   11
+			172.17.17.8/30   10
+			192.168.1.0/24   11
+			192.168.2.0/24   10
+		\end{verbatim}
+
+	\subsection*{3.10}
+		Στον R3 εκτελούμε \verb|do show ip ospf route|. Έχουμε:
+		
+		\begin{verbatim}
+			Network          Cost
+			172.17.17.0/30   11
+			172.17.17.4/30   10
+			172.17.17.8/30   10
+			192.168.1.0/24   20
+			192.168.2.0/24   20
+		\end{verbatim}
+
+	\subsection*{3.11}
+		Με την εντολή \verb|network 0.0.0.0/0 area 0| ενεργοποιείται το OSPF σε όλες τις διεπαφές του R3, οπότε αυτός διαφημίζει τα υποδίκτυα \verb|172.17.17.4/30 (em0)|, \verb|172.17.17.8/30 (em1)| και \verb|127.0.0.1/32 (lo0)|.
+
+	\subsection*{3.12}
+		Η πηγή αυτής της πληροφορίας είναι ο R3, όπως μπορούμε να δούμε και από την εκτέλεση της εντολής:
+		
+		\begin{verbatim}
+			do show ip ospf database router
+		\end{verbatim}
+
+	\subsection*{3.13}
+		Στον R1 κάνουμε \verb|do ping 127.0.0.1|. Όπως φαίνεται και από το TTL=64, απαντά ο ίδιος ο R1, αφού η διεύθυνση \verb|127.0.0.1| αναφέρεται στον localhost, ο οποίος προτιμάται ως άμεσα συνδεδεμένος στον R1. Αυτό μπορούμε να το επιβεβαιώσουμε είτε εκτελώντας:
+		
+		\begin{verbatim}
+			do traceroute 127.0.0.1
+		\end{verbatim}
+		
+		είτε βλέποντας τον πίνακα δρομολόγησης με:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		 
+		 όπου βλέπουμε επιλεγμένη διαδρομή για το \verb|127.0.0.0/8| μέσω της \verb|lo0|.
+
+	\subsection*{3.14}
+		Εκτελούμε στον R3:
+		
+		\begin{verbatim}
+			do show ip route ospf
+		\end{verbatim}
+		
+		Έχει 2 διαδρομές, από τις οποίες έχει επιλεχθεί για τον πίνακα προώθησης η διαδρομή μέσω του R1.
+
+	\subsection*{3.15}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip ospf neighbor
+		\end{verbatim}
+		
+		Βλέπουμε ότι οι R1 και R2 είναι DROther.
+
+	\subsection*{3.16}
+		Στους R1,2,3 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip ospf database
+		\end{verbatim}
+		
+		Περιέχονται μόνο Router LSA. Δεν υπάρχει πληροφορία για Network LSA γιατί έχουμε δηλώσει λειτουργία point-to-point σε όλες τις διεπαφές των δρομολογητών στα WAN.
+
+	\subsection*{3.17}
+		Εκτελούμε \verb|do show ip ospf database router router-adv 0.0.0.1|. Η σύνδεσή του στο WAN1 περιγράφεται ως Stub Network.
+
+	\subsection*{3.18}
+		Στο PC2 εκτελούμε \verb|do ping 192.168.1.2|. Η τιμή του TTL είναι 62.
+
+	\subsection*{3.19}
+		Στον R2 εκτελούμε σε νέο παράθυρο \verb|tcpdump -vni em2 "not icmp"|.
+
+	\subsection*{3.20}
+		Αποσυνδέουμε το καλώδιο της διεπαφής του R1 στο WAN1. Το ping δεν διακόπτεται καθόλου, επανέρχεται κατευθείαν. Σταματάμε το ping. Δεν υπάρχουν καθόλου χαμένα πακέτα, ενώ το TTL αρχικά ήταν 62 και μετά τη διακοπή της σύνδεσης έγινε 61.
+
+	\subsection*{3.21}
+		Κρίνοντας και από τα αποτελέσματα του ping, ο χρόνος αντίδρασης του OSPF σε αλλαγές της τοπολογίας του δικτύου είναι άμεσος (μικρότερος από 1 δευτερόλεπτο στην συγκεκριμένη περίπτωση), κατά πολύ μικρότερος σε σχέση με το RIP (\textasciitilde30 δευτερόλεπτα, βλ. Εργαστηριακή Άσκηση 7)
+
+	\subsection*{3.22}
+		Σταματάμε το tcpdump. Πλην των μηνυμάτων Hello, ανταλλάχθηκαν 3 μηνύματα LS-Update και 3 αντίστοιχα μηνύματα LS-Ack.
+
+	\subsection*{3.23}
+		Διήρκησε \textasciitilde34 δευτερόλεπτα.
+
+	\subsection*{3.24}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Έχουμε:
+		
+		\begin{verbatim}
+			Network                 Cost
+			WAN1 (172.17.17.0/30)   21
+			WAN3 (172.17.17.8/30)   20
+			LAN2 (192.168.2.0/24)   30
+		\end{verbatim}
+
+	\subsection*{3.25}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Έχουμε: 
+		
+		\begin{verbatim}
+			Network                 Cost
+			WAN1 (172.17.17.0/30)   1
+			WAN2 (172.17.17.4/30)   20
+			LAN1 (192.168.1.0/24)   30
+		\end{verbatim}
+
+	\subsection*{3.26}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Πλέον έχει διαγραφεί μία από τις δύο διαδρομές, αυτή μέσω της διεπαφής \verb|172.17.17.5| (R1), και ως εκ τούτου έχει επιλεχθεί η διαδρομή μέσω της διεπαφής \verb|172.17.17.9| (R2), η οποία έχει μπει και στο FIB.
+
+	\subsection*{3.27}
+		Επειδή ο R1 έχει άμεσα συνδεδεμένη την \verb|em1| στο WAN1, και η διαδρομή αυτή έχει μηδενική διαχειριστική απόσταση, σε αντίθεση με την διαδρομή OSPF που έχει διαχειριστική απόσταση 110.
+
+	\subsection*{3.28}
+		Αποσυνδέουμε το καλώδιο της διεπαφής του R2 στο WAN1 και εκτελούμε \verb|do show ip route| στους R1,2,3. Βλέπουμε ότι από τους πίνακες δρομολόγησης έχουν διαγραφεί οι εγγραφές που αφορούν το \verb|172.17.17.0/30|
+
+	\subsection*{3.29}
+		Ξεκινάμε πάλι \verb|do ping 192.168.1.2| από το PC2. Επανασυνδέουμε τα καλώδια του WAN1. Η ενημέρωση των πινάκων δρομολόγησης δεν είναι άμεση, κάτι που φαίνεται και από το ότι αργεί να αλλάξει το TTL από 61 σε 62 στην έξοδο της εντολής ping.
+
+	\subsection*{3.30} 
+		Διότι όταν έχουμε αποσύνδεση του καλωδίου, στέλνεται ένα LS-Update κατευθείαν με σκοπό να είναι όσο το δυνατόν πιο άμεση η αποκατάσταση της επικοινωνίας. Αντίθετα, όταν ήδη υπάρχει επικοινωνία:
+		
+		\begin{itemize}
+			\item Δεν υπάρχει λόγος να γίνει άμεση αλλαγή στην ζεύξη που επανήλθε.
+			\item Είναι συνετό να υπάρχει κάποια αναμονή ώστε να επιβεβαιωθεί η σταθερότητα της ζεύξης που επανήλθε.
+		\end{itemize}
+
+\section*{Άσκηση 4: Περιοχές OSPF}
+
+	\subsection*{4.1}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			### PC1 ###
+			
+			vtysh
+			configure terminal
+			
+			hostname PC1
+			
+			interface em0
+			ip address 192.168.1.2/24
+			
+			ip route 0.0.0.0/0 192.168.1.1
+			
+			### PC2 ###
+			
+			vtysh
+			configure terminal
+			
+			hostname PC2
+			
+			interface em0
+			ip address 192.168.2.2/24
+			
+			ip route 0.0.0.0/0 192.168.2.1
+		\end{verbatim}
+
+	\subsection*{4.2}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			### R1 ###
+			
+			cli
+			configure terminal
+			
+			hostname R1
+			
+			interface lo0
+			ip address 172.22.22.1/32
+	
+			### R2 ###
+			
+			cli
+			configure terminal
+			
+			hostname R2
+			
+			interface lo0
+			ip address 172.22.22.2/32
+	
+			### R3 ###
+			
+			cli
+			configure terminal
+			
+			hostname R3
+			
+			interface lo0
+			ip address 172.22.22.3/32
+	
+			### R4 ###
+			
+			cli
+			configure terminal
+			
+			hostname R4
+			
+			interface lo0
+			ip address 172.22.22.4/32
+	
+			### R5 ###
+			
+			cli
+			configure terminal
+			
+			hostname R5
+			
+			interface lo0
+			ip address 172.22.22.5/32
+		\end{verbatim}
+		
+	\subsection*{4.3}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			### R1 ###
+			
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			### R2 ###
+			
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			### R3 ###
+			
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			### R4 ###
+			
+			interface em0
+			link-detect
+			
+			### R5 ###
+			
+			interface em0
+			link-detect
+		\end{verbatim}
+	
+	\subsection*{4.4}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 10.1.1.1/30
+			
+			interface em1
+			ip address 10.1.1.5/30
+			
+			router ospf
+			
+			network 10.1.1.0/30 area 0
+			network 10.1.1.4/30 area 0
+		\end{verbatim}
+	
+	\subsection*{4.5}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 10.1.1.2/30
+			
+			interface em1
+			ip address 10.1.1.9/30
+			
+			router ospf
+			
+			network 10.1.1.0/30 area 0
+			network 10.1.1.8/30 area 1
+		\end{verbatim}
+	
+	\subsection*{4.6}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 10.1.1.6/30
+			
+			interface em1
+			ip address 10.1.1.13/30
+			
+			router ospf
+			
+			network 10.1.1.4/30 area 0
+			network 10.1.1.12/30 area 2
+		\end{verbatim}
+
+	\subsection*{4.7}
+		Στον R4 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 10.1.1.10/30
+			
+			interface em1
+			ip address 192.168.1.1/24
+			
+			router ospf
+			
+			network 192.168.1.0/24 area 1
+			network 10.1.1.8/30 area 1
+		\end{verbatim}
+
+	\subsection*{4.8}
+		Στον R5 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 10.1.1.14/30
+			
+			interface em1
+			ip address 192.168.2.1/24
+			
+			router ospf
+			
+			network 192.168.2.0/24 area 2 
+			network 10.1.1.12/30 area 2
+		\end{verbatim}
+
+	\subsection*{4.9}
+		Στον PC1 εκτελούμε \verb|do ping 192.168.2.2|. Το ping είναι επιτυχές.
+
+	\subsection*{4.10}
+		Στους R1,2,3,4,5 εκτελούμε \verb|do show ip ospf|. Έχουμε:
+		
+		\begin{verbatim}
+			R1 Router-ID: 172.22.22.1
+			R2 Router-ID: 172.22.22.2
+			R3 Router-ID: 172.22.22.3
+			R4 Router-ID: 172.22.22.4
+			R5 Router-ID: 172.22.22.5
+		\end{verbatim}
+
+	\subsection*{4.11}
+		Εκτελούμε \verb|do show ip ospf neighbor| στους R1,2,3,4,5. Έχουμε:
+		
+		\begin{verbatim}
+			### WAN1 ###      
+			
+			Designated: R1
+			Backup: R2
+			
+			### WAN2 ###
+			
+			Designated: R1 
+			Backup: R3
+			
+			### WAN3 ###
+			
+			Designated: R2
+			Backup: R4
+			
+			### WAN4 ###
+			
+			Designated: R3
+			Backup: R5
+		\end{verbatim}
+	
+		Το αποτέλεσμα δεν είναι το αναμενόμενο με βάση το προηγούμενο ερώτημα (δηλαδή δεν είναι DR οι δρομολογητές με μεγαλύτερο Router-ID), επειδή το OSPF ενεργοποιήθηκε στους δρομολογητές με την σειρά R1 $\rightarrow$ R2 $\rightarrow$ R3 $\rightarrow$ R4 $\rightarrow$ R5. Επομένως ο R1 μπήκε ως DR στις ζεύξεις WAN1 και WAN2, ο R2 στην WAN3, και ο R3 στην WAN4. Αφού οριστεί ένας DR, δεν αντικαθίσταται από έναν καταλληλότερο DR (με μεγαλύτερο Router-ID), εκτός κι αν υπάρξει απώλεια του DR. 
+		
+	\subsection*{4.12}
+		Στους R1,2,3,4,5 εκτελούμε: 
+		
+		\begin{verbatim}
+			do show ip ospf border-routers
+		\end{verbatim}
+
+		Βρίσκουμε τους ABR για κάθε περιοχή:
+		
+		\begin{verbatim}
+			Area 0: R2, R3
+			Area 1: R2
+			Area 2: R3
+		\end{verbatim}
+
+	\subsection*{4.13}
+		Στον R1 εκτελούμε \verb|do show ip ospf database|. Σε σχέση με την Άσκηση 2, βλέπουμε επιπλέον τα Summary Link States.
+
+	\subsection*{4.14}
+		Έχει 9 LSA, εκ των οποίων 3 είναι Router LSA, 2 είναι Network LSA, και 4 είναι Summary LSA. Τα Router LSA είναι 3 και όχι 5 διότι ο κάθε δρομολογητής καταγράφει τα Router LSA της περιοχής του.
+
+	\subsection*{4.15}
+		Εκτελούμε \verb|do show ip ospf database self-originate| στον R1. Από τον R1 πηγάζουν τα ακόλουθα LSA:
+		
+		\begin{verbatim}
+			Router Link States
+			
+			Link ID
+			172.22.22.1
+			
+			Net Link States
+			
+			Link ID
+			10.1.1.1
+			10.1.1.5
+		\end{verbatim}
+
+	\subsection*{4.16}
+		Στον R1 εκτελούμε \verb|do show ip ospf database router| και παρατηρούμε ότι το Link ID και για τα τρία Router LSA προκύπτει από το Router-ID του δρομολογητή που τα παρήγαγε (\verb|172.22.22.1, 172.22.22.2, 172.22.22.3|).
+
+	\subsection*{4.17}
+		Στον R2 εκτελούμε \verb|do show ip ospf database|. Η LSDB του R2 περιέχει LSA για τις περιοχές 0 και 1.
+
+	\subsection*{4.18}
+		Στον R2 εκτελούμε \verb|do show ip ospf database|. Έχουμε:
+				
+		\begin{verbatim}
+			Total LSA: 16
+			
+			### Area 0 ###
+			
+			Router LSA: 3
+			Network LSA: 2
+			Summary LSA: 4
+			
+			### Area 1 ###
+			
+			Router LSA: 2
+			Network LSA: 1
+			Summary LSA: 4
+		\end{verbatim}
+		
+		Στην περιοχή 0 υπάρχουν 2 Network LSA, διότι υπάρχουν 2 ζεύξεις μεταξύ δρομολογητών, οπότε οι διεπαφές που είναι DR στέλνουν Network LSA διαφημίζοντας τη λίστα των δρομολογητών που είναι συνδεδεμένοι στην ίδια ζεύξη με αυτούς. \\
+		
+		Αντίστοιχα, στην περιοχή 1 υπάρχει 1 Network LSA, διότι υπάρχει 1 ζεύξη μεταξύ δρομολογητών, οπότε η διεπαφή που είναι DR στέλνει Network LSA διαφημίζοντας τη λίστα των δρομολογητών που είναι συνδεδεμένοι στην ίδια ζεύξη με αυτόν.
+
+	\subsection*{4.19}
+		Στον R2 εκτελούμε \verb|do show ip ospf database network| και βλέπουμε ότι το Link ID των Network LSA ταυτίζεται με τη διεύθυνση IP της αντίστοιχης διεπαφής του DR στην εκάστοτε ζεύξη:
+		
+		\begin{verbatim}
+			### Area 0 ###
+			
+			Link-ID: 10.1.1.1 
+			DR of 10.1.1.0/30: R1 (10.1.1.1)
+			
+			Link-ID: 10.1.1.5 
+			DR of 10.1.1.4/30: R1 (10.1.1.5)  
+			
+			### Area 1 ###
+			
+			Link-ID: 10.1.1.9 
+			DR of 10.1.1.8/30: R2 (10.1.1.9) 
+		\end{verbatim}
+
+	\subsection*{4.20}
+		Στον R3 εκτελούμε \verb|do show ip ospf database|. Έχουμε:
+		
+		\begin{verbatim}
+			Total LSA: 16
+			
+			### Area 0 ###
+			
+			Router LSA: 3
+			Network LSA: 2
+			Summary LSA: 4
+			
+			### Area 2 ###
+			
+			Router LSA: 2
+			Network LSA: 1
+			Summary LSA: 4
+		\end{verbatim}
+		
+		Στις περιοχές 0 και 2 υπάρχουν 4 Summary LSA, επειδή σε κάθε περιοχή υπάρχουν 4 ζεύξεις/δίκτυα εκτός της περιοχής αυτής. Συγκεκριμένα:
+		
+		\begin{verbatim}
+			Area 0: LAN1, LAN2, WAN3, WAN4
+			Area 2: LAN1, WAN1, WAN2, WAN3
+		\end{verbatim}
+		
+		Για αυτές τις ζεύξεις ο R3 ενημερώνεται μέσω των ABR R2, R3.
+
+	\subsection*{4.21}
+		Στον R3 εκτελούμε \verb|do show ip ospf database summary| και παρατηρούμε ότι το Link ID των Summary LSA ταυτίζεται με τον αριθμό δικτύου προορισμού.
+		
+		\begin{verbatim}
+			### Area 0 ###
+			
+			Link-ID: 10.1.1.8 == WAN3 Network Number
+			
+			Link-ID: 10.1.1.12 == WAN4 Network Number
+			
+			Link-ID: 192.168.1.0 == LAN1 Network Number
+			
+			Link-ID: 192.168.2.0 == LAN2 Network Number
+			
+			### Area 2 ###
+			
+			Link-ID: 10.1.1.0 == WAN1 Network Number
+			
+			Link-ID: 10.1.1.4 == WAN2 Network Number
+			
+			Link-ID: 10.1.1.8 == WAN3 Network Number
+			
+			Link-ID: 192.168.1.0 == LAN1 Network Number
+		\end{verbatim}
+
+	\subsection*{4.22}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip ospf database
+		\end{verbatim}
+		
+		Τα Router LSA πηγάζουν από τους R1, R2, R3, ενώ τα Network LSA πηγάζουν από τον R1.
+
+	\subsection*{4.23}
+		Στον R2 εκτελούμε \verb|do show ip ospf database|. Οι πηγές διαφήμισης των Summary LSA της LSDB του R2 για την περιοχή 0 είναι οι R2 και R3, ενώ για την περιοχή 1 είναι ο R2.
+
+	\subsection*{4.24}
+		Στον R1 εκτελούμε \verb|do show ip ospf route|. Για τις διαδρομές μεταξύ περιοχών υπάρχει η ένδειξη \verb|"IA"| (Inter-Area).
+
+	\subsection*{4.25}
+		Στον R1 εκτελούμε \verb|do show ip route ospf|. Δεν υπάρχει αντίστοιχη ένδειξη.
+		
+	\subsection*{4.26}
+		Στον R1 εκτελούμε \verb|do show ip ospf route|. Εκτός από διαδρομές προς δίκτυα, υπάρχουν και διαδρομές προς δρομολογητές (ένδειξη \verb|"R"|).
+
+	\subsection*{4.27}
+		Ναι, υπάρχει η ένδειξη \verb|"ABR"|.
+
+
+\section*{Άσκηση 5: OSPF και αναδιανομή διαδρομών}
+
+	\subsection*{5.1}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			ip route 5.5.5.0/24 lo0
+			ip route 6.6.6.0/24 lo0
+		\end{verbatim}
+
+	\subsection*{5.2}
+		Στον R3 εκτελούμε \verb|do show ip route|. Οι εγγραφές έχουν τοποθετηθεί στον πίνακα δρομολόγησης του R3. Ύστερα στον R3 εκτελούμε \verb|do show ip ospf route|. Οι εγγραφές δεν εμφανίζονται στον πίνακα διαδρομών OSPF.
+
+	\subsection*{5.3}
+		Στους R1,2,4,5 εκτελούμε \verb|do show ip route|. Οι εγγραφές δεν έχουν τοποθετηθεί στον πίνακα δρομολόγησης των άλλων δρομολογητών.
+
+	\subsection*{5.4}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			redistribute static
+		
+			do show ip route
+		\end{verbatim}
+		
+		Δεν έχει αλλάξει κάτι στον πίνακα δρομολόγησης του R3.
+
+	\subsection*{5.5}
+		Στους R1,2,4,5 εκτελούμε \verb|do show ip route|. Βλέπουμε ότι οι εγγραφές για τα δίκτυα \verb|5.5.5.0/24| και \verb|6.6.6.0/24| έχουν προστεθεί στους άλλους δρομολογητές ως OSPF διαδρομές.
+
+	\subsection*{5.6}
+		Στους R1,2,4,5 εκτελούμε \verb|do show ip ospf route|. Ο πίνακας διαδρομών OSPF περιέχει επίσης εξωτερικές (external) διαδρομές.
+
+	\subsection*{5.7} 
+		Είναι είδους E2, όπως φαίνεται και από την αντίστοιχη ένδειξη. Από τις δύο τιμές κόστους στον πίνακα διαδρομών OSPF (μέσα σε αγκύλες), η πρώτη είναι το κόστος εντός του δικτύου OSPF, ενώ η δεύτερη είναι το κόστος προς προορισμό.
+
+	\subsection*{5.8}
+		Στους R1,2,4,5 εκτελούμε \verb|do show ip ospf route|. Έχουμε:
+		
+		\begin{verbatim}
+			### R1 ###
+			
+			R3: ABR, ASBR
+			
+			### R2 ###
+			
+			R3: ABR, ASBR
+			
+			### R4 ### 
+			
+			R3: ASBR
+			
+			### R5 ###
+			
+			R3: ABR, ASBR
+			
+		\end{verbatim}
+
+	\subsection*{5.9}
+		Στον R1 εκτελούμε \verb|do show ip ospf database|. Αυτή τη φορά εμφανίζονται επιπλέον AS External LSA.
+
+	\subsection*{5.10}
+		Στον R1 εκτελούμε \verb|do show ip ospf database external|. Παρατηρούμε ότι το Link-ID των External LSA ταυτίζεται με τον αριθμό δικτύου του εξωτερικού δικτύου προορισμού. Συγκεκριμένα:
+		
+		\begin{verbatim}
+			Link-ID: 5.5.5.0 == 5.5.5.0/24 Network Number
+			
+			Link-ID: 6.6.6.0 == 6.6.6.0/24 Network Number
+		\end{verbatim}
+
+	\subsection*{5.11}
+		Στον R4 εκτελούμε \verb|do show ip ospf database|. Αυτή τη φορά εμφανίζονται όχι μόνο AS External LSA, αλλά και ASBR-Summary LSA.
+
+	\subsection*{5.12}
+		Στον R4 εκτελούμε \verb|do show ip ospf database asbr-summary|. Παρατηρούμε ότι το Link-ID του LSA ταυτίζεται με το Router-ID του αντίστοιχου ASBR που διαφημίζεται. Συγκεκριμένα:
+		
+		\begin{verbatim}
+			Link-ID: 172.22.22.3 == R3 Router-ID
+		\end{verbatim}
+
+	\subsection*{5.13}
+		Είναι ο R2, όπως φαίνεται και από το πεδίο \verb|Advertising Router: 172.22.22.2|.
+
+	\subsection*{5.14}
+		Διότι ο R3 (ASBR) και ο R5 βρίσκονται στην ίδια περιοχή, ενώ τα ASBR Summary LSA εκπέμπονται από τον ABR για να διαφημίσουν την παρουσία ASBR προς τις \emph{άλλες} περιοχές, και όχι στην ίδια περιοχή.
+
+	\subsection*{5.15}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			ip route 0.0.0.0/0 172.22.22.2
+		\end{verbatim}
+
+	\subsection*{5.16}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip route
+			do show ip ospf route
+		\end{verbatim}
+		
+		Η διαδρομή εμφανίζεται στον πίνακα δρομολόγησης, αλλά όχι στον πίνακα διαδρομών OSPF.
+
+	\subsection*{5.17}
+		Στους R1,3,4,5 εκτελούμε \verb|do show ip route|. Η εγγραφή δεν έχει τοποθετηθεί στους άλλους δρομολογητές.
+
+	\subsection*{5.18}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			router ospf
+			default-information originate
+			
+			do show ip route
+		\end{verbatim}
+		
+		Δεν έχει αλλάξει κάτι στον πίνακα δρομολόγησης του R2.
+
+	\subsection*{5.19}
+		Στους R1,3,4,5 εκτελούμε \verb|do show ip route|. Σε κάθε δρομολογητή έχει τοποθετηθεί OSPF διαδρομή με προορισμό το \verb|0.0.0.0/0| και επόμενο βήμα τέτοιο ώστε να ακολουθείται διαδρομή προς τον R2.
+
+	\subsection*{5.20}
+		Στους R1,3,4,5 εκτελούμε \verb|do show ip ospf route|. Η προκαθορισμένη διαδρομή χαρακτηρίζεται στον πίνακα διαδρομών OSPF ως external.
+
+	\subsection*{5.21}
+		Είναι είδους E2, όπως φαίνεται και από την σχετική ένδειξη. Από τις δύο τιμές κόστους στον πίνακα διαδρομών OSPF (μέσα σε αγκύλες), η πρώτη είναι το κόστος εντός του δικτύου OSPF, ενώ η δεύτερη είναι το κόστος προς τον προορισμό.
+
+	\subsection*{5.22}
+		Στους R1,3,4,5 εκτελούμε \verb|do show ip ospf route|. Έχουμε:
+		
+		\begin{verbatim}
+			### R1 ###
+			
+			R2: ABR, ASBR
+			
+			### R3 ###
+
+			R2: ABR, ASBR
+			
+			### R4 ###
+
+			R2: ABR, ASBR
+			
+			### R5 ###
+
+			R2: ASBR
+		\end{verbatim}
+
+	\subsection*{5.23}
+		Στον R5 εκτελούμε \verb|do show ip ospf database|. Υπάρχουν πλέον ASBR-Summary LSA, στην LSDB του R5, επειδή διαφημίζεται ο ASBR R2, που δεν ανήκει στην ίδια περιοχή με τον R5.
+
+	\subsection*{5.24}
+		Στους R1,2,3,4,5 εκτελούμε \verb|do show ip ospf database|. Σε όλους τους δρομολογητές υπάρχουν 3 εγγραφές External LSA, διότι διαφημίζονται 3 εξωτερικά δίκτυα από τους ASBR, τα \verb|0.0.0.0/0|, \verb|5.5.5.0/24| και \verb|6.6.6.0/24|.
+
+	\subsection*{5.25}
+		Στον R1 εκτελούμε \verb|do show ip ospf database external|. Η τιμή του κόστους για τις εξωτερικές διαδρομές είναι ίση με 20.
+
+	\subsection*{5.26}
+		Το Metric Type έχει τιμή 2, που αντιστοιχεί σε Ext type 2 (E2). Στο E2, ο ASBR καθορίζει το κόστος της διαδρομής προς τον προορισμό, και το κόστος εντός του δικτύου OSPF αγνοείται. Αυτό εξηγεί και αυτά που παρατηρήσαμε στα ερωτήματα 5.7 και 5.21, όπου τα κόστη προς τον προορισμό ήταν σταθερά για όλους τους δρομολογητές. 
+
+	\subsection*{5.27}
+		Στον R4 εκτελούμε \verb|do show ip ospf route| και βλέπουμε ότι το κόστος της διαδρομής OSPF από τον R4 στον R3 είναι 30.
+
+	\subsection*{5.28}
+		Στον R4 εκτελούμε \verb|do show ip ospf database asbr-summary|. Το κόστος που παρατηρούμε αφορά τη διαδρομή R2 $\rightarrow$ R1 $\rightarrow$ R3.
+
+\section*{Άσκηση 6: OSPF και περιοχές απόληξης}
+
+	\subsection*{6.1}
+		Στον PC1 εκτελούμε \verb|do ping 192.168.2.2|.
+
+	\subsection*{6.2}
+		Στον R3 εκτελούμε \verb|do show ip route ospf|. Έχουμε:
+		
+		\begin{verbatim}
+			O>* 0.0.0.0/0 [110/10] via 10.1.1.5, em0
+			O>* 10.1.1.0/30 [110/20] via 10.1.1.5, em0
+			O   10.1.1.4/30 [110/10] is directly connected, em0
+			O>* 10.1.1.8/30 [110/30] via 10.1.1.5, em0
+			O   10.1.1.12/30 [110/10] is directly connected, em1
+			O>* 192.168.1.0/24 [110/40] via 10.1.1.5, em0
+			O>* 192.168.2.0/24 [110/20] via 10.1.1.14, em1
+		\end{verbatim}
+
+	\subsection*{6.3}
+		Στον R5 εκτελούμε \verb|do show ip route ospf|. Έχουμε:
+		
+		\begin{verbatim}
+			O>* 0.0.0.0/0 [110/10] via 10.1.1.13, em0
+			O>* 5.5.5.0/24 [110/20] via 10.1.1.13, em0
+			O>* 6.6.6.0/24 [110/20] via 10.1.1.13, em0
+			O>* 10.1.1.0/30 [110/30] via 10.1.1.13, em0
+			O>* 10.1.1.4/30 [110/20] via 10.1.1.13, em0
+			O>* 10.1.1.8/30 [110/40] via 10.1.1.13, em0
+			O   10.1.1.12/30 [110/10] is directly connected, em0
+			O>* 192.168.1.0/24 [110/50] via 10.1.1.13, em0
+			O   192.168.2.0/24 [110/10] is directly connected, em1
+		\end{verbatim}
+
+	\subsection*{6.4}
+		Στον R5 εκτελούμε \verb|do show ip ospf database router self-originate|. Το δίκτυο του LAN2 χαρακτηρίζεται ως Stub, ενώ του WAN4 ως Transit.
+
+	\subsection*{6.5}
+		Στον R3 εκτελούμε \verb|area 2 stub| και περιμένουμε να διαδοθεί η αλλαγή. Μετά από περίπου 30 δευτερόλεπτα εμφανίζεται μήνυμα "Time to live exceeded".
+
+	\subsection*{6.6}
+		Στον R3 εκτελούμε \verb|do show ip route|. Παρατηρούμε ότι έχει διαγραφεί η εγγραφή με προορισμό του δίκτυο \verb|192.168.2.0/24|.
+
+	\subsection*{6.7}
+		Στον R5 εκτελούμε \verb|do show ip route|. Ο πίνακας δρομολόγησης του R5 περιέχει διαδρομές για τα δίκτυα:
+		
+		\begin{verbatim}
+			10.1.1.12/30
+			127.0.0.0/8
+			172.22.22.5/32
+			192.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{6.8}
+		Στους R1,2,3,4 εκτελούμε \verb|do show ip route|. Δεν υπάρχει διαδρομή για το LAN2 στον πίνακα δρομολόγησης κανενός δρομολογητή.
+
+	\subsection*{6.9}
+		Στον PC1 εκτελούμε \verb|do traceroute 192.168.2.2|. Η έξοδος της εντολής είναι:
+		
+		\begin{verbatim}
+			1   192.168.1.1
+			2   10.1.1.9
+			3   10.1.1.9
+			4   10.1.1.9
+			...
+			63  10.1.1.9
+			64  10.1.1.9
+		\end{verbatim}
+		
+		Βλέπουμε ότι το ICMP Request ξεκινά από τον PC1, φτάνει στον R4 και ύστερα ανακυκλώνεται στον R2, επειδή -ελλείψει άλλης διαδρομής προς το LAN2- επιλέγεται συνεχώς η προκαθορισμένη διαδρομή μέσω της loopback του R2. Έτσι δεν φτάνει ποτέ στον PC2.
+
+	\subsection*{6.10}
+		Για τον ίδιο λόγο με το 6.9, το ICMP Request ανακυκλώνεται στον R2 μέχρι να μηδενιστεί το TTL του, εξού και το μήνυμα λάθους "Time to live exceeded".
+
+	\subsection*{6.11}
+		Στον R3 εκτελούμε \verb|do show ip ospf database router|. Παρατηρούμε ότι στην περιοχή 2, το E-bit είναι ίσο με 0 στο Router LSA του R3, ενώ είναι ίσο με 1 στο Router LSA του R5. Αυτό συμβαίνει επειδή έχουμε ορίσει την περιοχή 2 ως stub στον R3 αλλά όχι στον R5.
+
+	\subsection*{6.12}
+		Στον R3 εκτελούμε \verb|do show ip ospf|. Έχουμε:
+		
+		\begin{verbatim}
+			Area ID: 0.0.0.2 (Stub)
+		\end{verbatim}
+
+	\subsection*{6.13}
+		Στον R5 εκτελούμε \verb|area 2 stub| και μετά από λίγο το ping λειτουργεί κανονικά.
+
+	\subsection*{6.14}
+		Στον R3 εκτελούμε \verb|do show ip route| και βλέπουμε ότι έχει προστεθεί OSPF εγγραφή με προορισμό το \verb|192.168.2.0/24|.
+
+	\subsection*{6.15}
+		Στον R5 εκτελούμε \verb|do show ip ospf database router| και βλέπουμε ότι το E-bit είναι 0 και στον R5 πλέον, εξαιτίας της αλλαγής που κάναμε στο 6.13.
+
+	\subsection*{6.16}
+		Στον R5 εκτελούμε \verb|do show ip route|. Υπάρχει εγγραφή για την προκαθορισμένη διαδρομή μέσω του R3 (\verb|10.1.1.13|).
+
+	\subsection*{6.17}
+		Όχι, δεν υπάρχουν εγγραφές προς τα \verb|5.5.5.0/24| και \verb|6.6.6.0/24|.
+
+	\subsection*{6.18} 
+		Περιέχει διαδρομές προς τα δίκτυα:
+		
+		\begin{verbatim}
+			10.1.1.0/30        inter-area
+			10.1.1.4/30        inter-area
+			10.1.1.8/30        inter-area
+			10.1.1.12/30       intra-area
+			192.168.1.0/24     inter-area
+			192.168.2.0/24     intra-area
+		\end{verbatim}
+
+	\subsection*{6.19}
+		Στους R1,2,3,4 εκτελούμε: \verb|do show ip route|. Παρατηρούμε ότι έχει προστεθεί ξανά η εγγραφή με προορισμό το \verb|192.168.2.0/24|.
+
+	\subsection*{6.20}
+		Όταν ορίσαμε στον R3 την περιοχή 2 ως απόληξη, στον R5 ακόμα ήταν ορισμένη ως κανονική, οπότε οι δρομολογητές R3 και R5 δεν μπορούσαν να φτάσουν σε κατάσταση \emph{2-way}, ώστε να ανταλλάξουν δεδομένα δρομολόγησης OSPF, και έτσι η διαδρομή στο LAN2 δεν γινόταν γνωστή στον R3. Λογικό είναι λοιπόν το ping να αποτυγχάνει αρχικά. Ύστερα όμως, όταν ορίζουμε και στον R5 την περιοχή 2 ως απόληξη, η πληροφορία δρομολόγησης μεταξύ R3 και R5 ανταλλάσεται επιτυχώς και όλο το δίκτυο μαθαίνει για την παρουσία του LAN2, οπότε το ping είναι και πάλι επιτυχές.
+
+	\subsection*{6.21}
+		Αυτό συμβαίνει διότι στην περίπτωση του R4, η προκαθορισμένη διαδρομή πρόκειται γι' αυτήν που διένειμε ο R2, οπότε αναγράφεται ως εξωτερική, ενώ στην περίπτωση του R5, η προκαθορισμένη διαδρομή πρόκειται γι' αυτήν που ορίστηκε επειδή η περιοχή 2 είναι πλέον απόληξη, και έχει σκοπό την δρομολόγηση όλων των πακέτων που προορίζονται για εξωτερικά δίκτυα μέσω της προκαθορισμένης πύλης. \\ 
+		
+		Πιο συγκεκριμένα, στον R4 αυτή η διαδρομή διανεμήθηκε από τον R2, στον οποίο είχε οριστεί ως στατική (γι' αυτό και χαρακτηρίζεται ως εξωτερική), ενώ στον R5 αυτή η διαδρομή διαφημίστηκε από τον R3 (ως ABR) μέσω Summary LSA.
+
+	\subsection*{6.22}
+		Στον R3 εκτελούμε \verb|do show ip ospf database self-originate| και βλέπουμε ότι τη διαφημίζει με κόστος 1.
+
+	\subsection*{6.23}
+		Στον R5 εκτελούμε \verb|do show ip ospf route|. Η προκαθορισμένη διαδρομή έχει κόστος 11. Αυτό συμβαίνει επειδή το προκαθορισμένο κόστος για την προκαθορισμένη διαδρομή στις περιοχές απολήξεις είναι 1, επομένως για την προκαθορισμένη διαδρομή ο R5 "βλέπει" κόστος:
+		
+		\begin{verbatim}
+			(R3 advertised cost for default gateway) + (Cost from R5 to R3) = 1 + 10 = 11.
+		\end{verbatim}
+
+	\subsection*{6.24}
+		Στον R5 εκτελούμε \verb|do show ip ospf database|. Εμφανίζονται εγγραφές για εξωτερικές εγγραφές, οι οποίες θα διαγραφούν μετά την παρέλευση 3600 δευτερολέπτων από την τελευταία ενημέρωση τους.
+
+	\subsection*{6.25}
+		Στους R3 και R5 εκτελούμε \verb|no area 2 stub|.
+
+	\subsection*{6.26}
+		Πρέπει να προσθέσουμε το \verb|no-summary| στο τέλος της εντολής, ως εξής:
+		
+		\begin{verbatim}
+			area 2 stub no-summary
+		\end{verbatim}
+
+	\subsection*{6.27}
+		Στον R3 εκτελούμε \verb|area 2 stub no-summary| ενώ στον R5 \verb|area 2 stub|.
+
+	\subsection*{6.28}
+		Στον R5 εκτελούμε \verb|do show ip ospf route|. Ο πίνακας του R5 περιέχει εγγραφές για τα δίκτυα:
+		
+		\begin{verbatim}
+			0.0.0.0/0 (default route)
+			10.1.1.12/30
+			192.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{6.29}
+		Στο PC2 εκτελούμε:
+		
+		\begin{verbatim}
+			no ip route 0.0.0.0/0 192.168.2.1
+			
+			router ospf
+			
+			network 192.168.2.0/24 area 2
+			
+			area 2 stub
+		\end{verbatim}
+
+	\subsection*{6.30}
+		Στο PC2 εκτελούμε \verb|do show ip route|. Περιέχονται οι δυναμικές εγγραφές:
+		
+		\begin{verbatim}
+			O>* 0.0.0.0/0 [110/111] via 192.168.2.1, em0
+			O>* 10.1.1.12/30 [110/110] via 192.168.2.1, em0
+			O   192.168.2.0/24 [110/100] is directly connected, em0
+		\end{verbatim}
+
+	\subsection*{6.31}
+		Στον R5 εκτελούμε \verb|do show ip ospf database router self-originate|. Πλέον το LAN2 χαρακτηρίζεται ως Transit, επειδή έχουμε δύο OSPF δρομολογητές στο δίκτυο \verb|192.168.2.0/24|.
+
+	\subsection*{6.32}
+		Συμπέρασμα των παραπάνω είναι ότι δίκτυο απόληξη και περιοχή απόληξη διαφέρουν μεταξύ τους. Δίκτυο απόληξη είναι αυτό που έχει μόνο έναν OSPF δρομολογητή και ως εκ τούτου τα πακέτα OSPF είτε πηγάζουν είτε καταλήγουν σε αυτό, ενώ περιοχή απόληξη είναι αυτή στην οποία οι πίνακες των δρομολογητών περιέχουν όλες τις εσωτερικές διαδρομές και μία προκαθορισμένη διαδρομή για όλους τους προορισμούς εκτός δικτύου OSPF. \\ 
+		
+		Επίσης, η έννοια του δικτύου απόληξη είναι κάτι που προκύπτει από την κατασκευή του δικτύου (εξαρτάται από το πόσοι δρομολογητές υπάρχουν σε ένα δίκτυο και σε πόσους από αυτούς το OSPF είναι ενεργοποιημένο), ενώ η έννοια της περιοχής απόληξη είναι κάτι που ορίζεται χειροκίνητα σε όλους τους δρομολογητές (αρκεί να εκτελεστεί μια εντολή σε όλους τους δρομολογητές της περιοχής).
+\end{document}

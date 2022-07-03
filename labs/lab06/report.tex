@@ -1,0 +1,961 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Εργαστηριακή Άσκηση 6 \\ 
+	Εισαγωγή στο Quagga και FRRouting (FRR)
+}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{center}
+	\begin{tabular}{|l|l|}
+		\hline
+		\textbf{Ονοματεπώνυμο:} Νικόλαος Παγώνας, el18175  & \textbf{Όνομα PC:} nick-ubuntu \\
+		\hline
+		\textbf{Ομάδα:} 1 (Τρίτη 10:45) & \textbf{Ημερομηνία Εξέτασης:} Τρίτη 05/04/2022 \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\section*{Άσκηση 1 (προετοιμασία): Γνωριμία με το περιβάλλον του FRR}
+
+	\subsection*{1}
+		Ορίζουμε την πρώτη δικτυακή διεπαφή σε NAT.
+	
+	\subsection*{2}
+		Εκτελούμε \verb|dhclient em0|.
+	
+	\subsection*{3}
+		Εκτελούμε \verb|ping www.google.com|.
+		
+	\subsection*{4}
+		Εκτελούμε \verb|pkg update|.
+	
+	\subsection*{5}
+		Εκτελούμε \verb|pkg install frr7|.
+	
+	\subsection*{6}
+		Προσθέτουμε τη γραμμή \verb|kern.ipc.maxsockbuf=16777216|. 
+	
+	\subsection*{7}
+		Εκτελούμε \verb|chown frr:frr /usr/local/etc/frr/|.
+	
+	\subsection*{8}
+		Εκτελούμε \verb|touch /usr/local/etc/frr/{vtysh.conf,zebra.conf,staticd.conf}|.
+	
+	\subsection*{9}
+		Εκτελούμε \verb|chown frr:frr /usr/local/etc/frr/{vtysh.conf,zebra.conf,staticd.conf}|
+	
+	\subsection*{10}
+		Στο αρχείο εκκίνησης \verb|/etc/rc.conf| προσθέτουμε τις εντολές:
+		
+		\begin{verbatim}
+			hostname="R0"
+			gateway_enable="YES"
+			frr_enable="YES"
+			frr_daemons="zebra staticd"
+		\end{verbatim}
+	
+	\subsection*{11}
+		Στο αρχείο \verb|/etc/csh.cshrc| προσθέτουμε τη γραμμή:
+		
+		\begin{verbatim}
+			setenv VTYSH_PAGER "more -EFX"
+		\end{verbatim}
+	
+	\subsection*{12}
+		Διαγράφουμε το αρχείο \verb|/etc/resolv.conf| που δημιούργησε ο πελάτης DHCP και κλείνουμε το μηχάνημα με την εντολή \verb|poweroff|.
+	
+	\subsection*{13}
+		Ενεργοποιούμε τις άλλες 3 κάρτες δικτύωσης, ρυθμίζουμε όλες τις κάρτες σε εσωτερική δικτύωση, επιλέγουμε Deny στο Promiscuous Mode και δίνουμε στα εσωτερικά δίκτυα διαφορετικά ονόματα LAN1,2,3,4.
+	
+	\subsection*{14}
+		Κάνουμε επανεκκίνηση του FreeBSD και βεβαιωνόμαστε ότι η υπηρεσία \verb|sshd| και το \verb|frr| τρέχουν με τις εντολές \verb+ps aux | grep sshd+ και \verb+ps aux | grep frr+.
+	
+	\subsection*{15}
+		Εκτελούμε \verb|history -c|, ύστερα \verb|poweroff| και κάνουμε Export Appliance, δημιουργώντας ένα αρχείο \verb|frr.ova|.
+	
+	\subsection*{16}
+		Αποθηκεύουμε το αρχείο \verb|frr.ova| για μελλοντική χρήση.
+
+	\subsection*{1.1}
+		Εκτελούμε \verb|telnet localhost 2601|. Εμφανίζεται μήνυμα λάθους:
+		
+		\begin{verbatim}
+			Vty password is not set.
+			Connection closed by foreign host.
+		\end{verbatim}
+
+	\subsection*{1.2}
+		Η εντολή \verb|vtysh|.
+
+	\subsection*{1.3}
+		Βλέπουμε 22 εντολές.
+
+	\subsection*{1.4}
+		Παρατηρούμε ότι γίνεται αυτόματη συμπλήρωση της εντολής traceroute.
+
+	\subsection*{1.5}
+		Πατώντας το tab εμφανίζονται οι εντολές που ξεκινάνε με "co", ενώ πατώντας το \verb|"?"| εμφανίζονται επιπλέον σύντομες περιγραφές γι' αυτές τις εντολές.
+
+	\subsection*{1.6}
+		Είναι \verb|show version|.
+
+	\subsection*{1.7}
+		Είναι \verb|w t|.
+
+	\subsection*{1.8}
+		Με την εντολή \verb|show running-config|.
+
+	\subsection*{1.9}
+		Με την εντολή \verb|configure terminal|
+
+	\subsection*{1.10}
+		Εκτελούμε \verb|configure terminal| και ύστερα \verb|hostname R1|. Παρατηρούμε ότι αλλάζει το prompt, από \verb|R0(config)| σε \verb|R1(config)|.
+		
+	\subsection*{1.11}
+		Εκτελούμε \verb|password ntua|.
+
+	\subsection*{1.12}
+		Πρέπει να δώσουμε την εντολή "exit" 2 φορές.
+
+	\subsection*{1.13}
+		Δοκιμάζουμε πάλι \verb|telnet localhost 2601|. Παρατηρούμε ότι αυτή τη φορά αντί να αποτυγχάνει το telnet, μας ζητείται να εισάγουμε το password που ορίσαμε.
+
+	\subsection*{1.14}
+		Βρισκόμαστε σε επίπεδο User EXEC, όπως δείχνει και το prompt \verb|R0>| αντί \verb|R0#|.
+
+	\subsection*{1.15}
+		Βλέπουμε 9 εντολές.
+
+	\subsection*{1.16}
+		Σε επίπεδο User EXEC βλέπουμε 13 λιγότερες εντολές, όπως είναι λογικό, αφού το επίπεδο User EXEC έχει λιγότερες ελευθερίες από το επίπεδο Privileged EXEC. 
+
+	\subsection*{1.17}
+		Με την εντολή \verb|show interface|.
+
+	\subsection*{1.18} 
+		Εκτελούμε \verb|show ip forwarding|. Η προώθηση είναι ενεργοποιημένη.
+
+	\subsection*{1.19}
+		Εκτελούμε \verb|show ip route|.
+
+	\subsection*{1.20}
+		Όχι, διότι η εντολή \verb|show running-config / write terminal| ανήκει στο επίπεδο Privileged EXEC.
+
+	\subsection*{1.21}
+		Με την εντολή \verb|enable|.
+
+	\subsection*{1.22}
+		Ναι, μπορούμε να δούμε την τρέχουσα παραμετροποίηση του FRR με \verb|write terminal|. Το συνθηματικό εμφανίζεται στην έξοδο της εντολής. 
+
+	\subsection*{1.23}
+		Εκτελούμε \verb|list|.
+
+	\subsection*{1.24}
+		Σε Global Configuration Mode (δηλαδή αφού έχουμε εκτελέσει \verb|configure terminal| σε λειτουργία Privileged EXEC), εκτελούμε \verb|enable password ntua|.
+
+	\subsection*{1.25}
+		Mε την εντολή \verb|service password-encryption|.
+
+	\subsection*{1.26}
+		Θα προτιμούσαμε την επιλογή του ssh, καθώς ως γνωστόν το ssh αποτελεί πολύ ασφαλέστερη επιλογή από το telnet, για λόγους που έχουν συζητηθεί στο μάθημα των Δικτύων Υπολογιστών (το telnet στέλνει τα πακέτα χωρίς κανενός είδους κρυπτογράφηση -ακόμα και τους κωδικούς-, ενώ το ssh χρησιμοποιεί κρυπτογραφημένη επικοινωνία).
+
+\section*{Άσκηση 2: Δρομολόγηση σε ένα βήμα}
+
+	\subsection*{2.1}
+		Με τις εντολές:
+		
+		\begin{verbatim}
+			PC1: ifconfig em0 192.168.1.2/24 
+			PC2: ifconfig em0 192.168.2.2/24
+		\end{verbatim}
+
+	\subsection*{2.2}
+		Εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			hostname R1
+			interface em0
+			ip address 192.168.1.1/24
+			exit
+			interface em1
+			ip address 192.168.2.1/24
+			exit
+			
+		\end{verbatim}
+
+	\subsection*{2.3}
+		Στον R1 εκτελούμε \verb|do show interface|. Οι διευθύνσεις ορίστηκαν κανονικά.
+
+	\subsection*{2.4}
+		Εκτελούμε \verb|do show ip forwarding|. Αν δεν είναι ενεργοποιημένη, την ενεργοποιούμε με \verb|ip forwarding|. Στη δική μας περίπτωση είναι ενεργοποιημένη.
+
+	\subsection*{2.5}
+		Στο PC1 εκτελούμε \verb|route add -net 192.168.2.0/24 192.168.1.1|.
+
+	\subsection*{2.6}
+		Στο PC2 εκτελούμε \verb|route add -net 192.168.1.0/24 192.168.2.1|.
+
+	\subsection*{2.7}
+		Εκτελούμε \verb|ping 192.168.2.2| από το PC1 στο PC2. Οι δύο υπολογιστές επικοινωνούν.
+
+	\subsection*{2.8}
+		Στον R1 μέσω vtysh εκτελούμε:
+		
+		\begin{verbatim}
+			interface em0
+			ip address 192.168.1.200/24
+			do show interface em0
+		\end{verbatim}
+		
+		Παρατηρούμε ότι η διεύθυνση \verb|192.168.1.200/24| έχει οριστεί ως secondary, ενώ η προηγούμενη \verb|192.168.1.1/24| δεν έχει σβηστεί.
+
+	\subsection*{2.9}
+		Εκτελούμε \verb|ifconfig em0| από τη γραμμή εντολών του R1. Βλέπουμε ότι η \verb|em0| έχει όντως δύο διευθύνσεις IPv4, οι οποίες συμφωνούν με το προηγούμενο ερώτημα, ωστόσο σε αυτή την περίπτωση δεν αναγράφεται κάποια διεύθυνση ως secondary.
+
+	\subsection*{2.10}  
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			no ip address 192.168.1.200/24
+		\end{verbatim}
+		
+		και ύστερα με \verb|ifconfig em0| επιβεβαιώνουμε ότι η ζητούμενη διεύθυνση διαγράφτηκε.
+
+	\subsection*{2.11}
+		Με την εντολή \verb|do write memory| ή \verb|do write file|.
+
+	\subsection*{2.12}
+		Από την έξοδο της παραπάνω εντολής βλέπουμε ότι ενημερώνονται τα αρχεία \verb|zebra.conf| και \verb|staticd.conf| του φακέλου \verb|/usr/local/etc/frr/|.
+
+\section*{Άσκηση 3: Δρομολόγηση σε περισσότερα βήματα}
+
+	\subsection*{3.1}
+		Εκτελούμε: 
+		
+		\begin{verbatim}
+			PC1:
+			ifconfig em0 192.168.1.2/24
+			route add -net 192.168.2.0/24 192.168.1.1
+			
+			PC2:
+			ifconfig em0 192.168.2.2/24
+			route add -net 192.168.1.0/24 192.168.2.1
+		\end{verbatim}
+
+	\subsection*{3.2}
+		Εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			hostname R1
+			interface em0
+			ip address 192.168.1.1/24
+			interface em1
+			ip address 172.17.17.1/30
+		\end{verbatim}
+
+	\subsection*{3.3}
+		Εκτελούμε στον R2:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			hostname R2
+			interface em0
+			ip address 172.17.17.2/30
+			interface em1
+			ip address 192.168.2.1/24
+		\end{verbatim}
+
+	\subsection*{3.4}
+		Εκτελούμε στον R1 μέσω \verb|vtysh|:
+		
+		\begin{verbatim}
+			configure terminal
+			ip route 192.168.2.0/24 172.17.17.2
+		\end{verbatim}
+
+	\subsection*{3.5}
+		Εκτελούμε στον R2 μέσω \verb|vtysh|:
+		
+		\begin{verbatim}
+			configure terminal
+			ip route 192.168.1.0/24 172.17.17.1
+		\end{verbatim}
+
+	\subsection*{3.6}
+		Εκτελούμε \verb|telnet 192.168.1.1 2601|. Η σύνδεση αποτυγχάνει με μήνυμα:
+		
+		\begin{verbatim}
+			Vty password is not set.
+			Connection closed by foreign host.
+		\end{verbatim}
+		
+		Για να γίνει δυνατή η παραπάνω σύνδεση πρέπει να ορίσουμε κωδικό στον R1 για την πιστοποίηση απομακρυσμένων συνδέσεων (πχ \verb|password ntua|).
+
+	\subsection*{3.7}
+		Εκτελούμε \verb|?| και βλέπουμε ότι δεν υπάρχει διαθέσιμη εντολή σχετική με σύνδεση στην υπηρεσία zebra άλλου μηχανήματος, άρα δεν μπορούμε να συνδεθούμε στην υπηρεσία zebra του R2 μέσω του path PC1$\rightarrow$R1$\rightarrow$R2.
+
+	\subsection*{3.8}
+		Θα κάναμε \verb|telnet 192.168.2.1 2601| διότι το PC1 έχει εγγραφή στον πίνακα δρομολόγησης μόνο για το υποδίκτυο \verb|192.168.2.0/24| και όχι για το \verb|172.17.17.0/30|.
+
+	\subsection*{3.9}
+		Με την εντολή \verb|who|. Δεν εμφανίζεται ο χρήστης που έχει εισέλθει τοπικά μέσω \verb|vtysh| στον R2, μόνο ο PC2 (\verb|192.168.2.2|).
+
+	\subsection*{3.10}
+		Όχι, διότι οι εντολές \verb|ping| και \verb|traceroute| δεν εμφανίζονται όταν πατάμε το πλήκτρο \verb|"?"|. Αντίθετα, από την τοπική σύνδεση μπορούμε.
+
+	\subsection*{3.11}
+		Εκτελούμε \verb|traceroute 192.168.1.2| από τον R2 και \verb|traceroute 192.168.2.2| από τον R1. Τα traceroute δεν ολοκληρώνονται διότι δεν έχει τεθεί στον πίνακα δρομολόγησης των PC1, PC2 εγγραφή το δίκτυο \verb|172.17.17.0/30|, οπότε δεν μπορούν τα PC1,2 να απαντήσουν με "ICMP udp port unreachable".
+		
+	\subsection*{3.12}
+		Μπορούμε να κάνουμε: 
+		
+		\begin{verbatim}
+			PC1: route add -net 172.17.17.0/30 192.168.1.1
+			PC2: route add -net 172.17.17.0/30 192.168.2.1
+		\end{verbatim}
+
+\section*{Άσκηση 4: Εναλλακτικές διαδρομές}
+
+	\subsection*{4.1}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			PC1: 
+			ifconfig em0 192.168.1.2/24
+			route add default 192.168.1.1
+			
+			PC2: 
+			ifconfig em0 192.168.2.2/24
+			route add default 192.168.2.1
+		\end{verbatim}
+				
+	\subsection*{4.2}
+		Εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			cli
+			configure terminal
+			hostname R1
+			interface em0
+			ip address 192.168.1.1/24
+			interface em1
+			ip address 172.17.17.1/30
+			interface em2
+			ip address 172.17.17.5/30
+		\end{verbatim}
+
+	\subsection*{4.3}
+		Εκτελούμε στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.2.0/24 172.17.17.2
+		\end{verbatim}		
+
+	\subsection*{4.4}
+		Εκτελούμε στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Εμφανίζονται:
+		
+		\begin{itemize}
+			\item 127.0.0.0/8 $\rightarrow$ lo0
+			\item 172.17.17.0/30 $\rightarrow$ em1
+			\item 172.17.17.4/30 $\rightarrow$ em2
+			\item 192.168.1.0/24 $\rightarrow$ em0
+			\item 192.168.2.0/24 $\rightarrow$ em1
+		\end{itemize}
+
+	\subsection*{4.5}
+		Με τη φράση \verb|is directly connected| στην έξοδο της εντολής.
+
+	\subsection*{4.6}
+		Μέσω του flag "S" στην αρχή της γραμμής:
+		
+		\begin{verbatim}
+			===> S>* 192.168.2.0/24 [1/0] via 172.17.17.2, em1
+		\end{verbatim}
+
+	\subsection*{4.7}
+		Εκτελούμε \verb|netstat -rn|. Οι εγγραφές συμφωνούν, απλώς η \verb|netstat| έχει κάποιες επιπλέον εγγραφές που αφορούν την \verb|lo0|.
+
+	\subsection*{4.8}
+		Έχουν δηλωθεί οι σημαίες "UG1". 
+		
+		\begin{itemize}
+			\item "U": σημαίνει ότι η διαδρομή είναι ενεργή (up).
+			\item "G": σημαίνει ότι ο προορισμός είναι πύλη, που θα αποφασίσει για το πώς θα προωθήσει τα πακέτα περαιτέρω.
+			\item "1": μια σημαία που εξαρτάται από το πρωτόκολλο δρομολόγησης (Protocol specific routing flag \#1)
+		\end{itemize}
+		
+	\subsection*{4.9}
+		Εκτελούμε στον R2 μέσω cli:
+		
+		\begin{verbatim}
+			configure terminal
+			hostname R2
+			interface em0
+			ip address 172.17.17.2/30
+			interface em1
+			ip address 172.17.17.9/30
+			interface em2
+			ip address 192.168.2.1/24
+		\end{verbatim}
+
+	\subsection*{4.10}
+		Εκτελούμε στον R2 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 172.17.17.1
+		\end{verbatim}
+
+	\subsection*{4.11}		
+		Εκτελούμε στον R3 μέσω cli:
+		
+		\begin{verbatim}
+			hostname R3
+			interface em0
+			ip address 172.17.17.6/30
+			interface em1
+			ip address 172.17.17.10/30
+		\end{verbatim}
+
+	\subsection*{4.12}
+		Εκτελούμε στον R3 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 172.17.17.5
+			ip route 192.168.2.0/24 172.17.17.9
+		\end{verbatim}
+
+	\subsection*{4.13}
+		Εκτελούμε στον R3 μέσω cli:
+		
+		\begin{verbatim}
+			do show ip forwarding
+		\end{verbatim}
+		
+		Εμφανίζεται μήνυμα "IP forwarding is \textbf{on}".
+
+	\subsection*{4.14}
+		Στο PC1 εκτελούμε \verb|traceroute 192.168.2.2|. Τα πακέτα ακολουθούν τη διαδρομή: \\
+		
+		PC1 $\rightarrow$ R1 $\rightarrow$ R2 $\rightarrow$ PC2.
+
+\section*{Άσκηση 5: Σφάλμα καλωδίου και αυτόματη αλλαγή στη δρομολόγηση}
+
+	\subsection*{5.1}
+		Μέσω cli στον R1:
+		
+		\begin{verbatim}
+			ip route 192.168.2.0/24 172.17.17.6 2
+		\end{verbatim}
+
+	\subsection*{5.2}
+		 Δώσαμε την τιμή $2$, για να είναι μεγαλύτερη (και άρα λιγότερο προτιμητέα) από την προηγούμενη σχετική στατική εγγραφή, που έχει απόσταση $1$.
+
+	\subsection*{5.3}
+		Μέσω cli στον R2:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 172.17.17.10 2
+		\end{verbatim}
+
+	\subsection*{5.4}
+		Στους R1 και R2 μέσω cli:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+
+		R1 σχετικά με το LAN2:
+		
+		\begin{verbatim}
+			S   192.168.2.0/24 [2/0] via 172.17.17.6, em2
+			S>* 192.168.2.0/24 [1/0] via 172.17.17.2, em1
+		\end{verbatim}
+		
+		R2 σχετικά με το LAN1:
+		
+		\begin{verbatim}
+			S   192.168.1.0/24 [2/0] via 172.17.17.10, em1
+			S>* 192.168.1.0/24 [1/0] via 172.17.17.1, em0
+		\end{verbatim}
+	
+	\subsection*{5.5}
+		Στον R1 είναι ενεργοποιημένη η διαδρομή μέσω του R2 (διεπαφή \verb|172.17.17.2|). Αυτό φαίνεται από το σύμβολο \verb|">"| στην αντίστοιχη εγγραφή του ερωτήματος \verb|5.4|.
+		
+	\subsection*{5.6}
+		Η διαχειριστική απόσταση είναι ο πρώτος αριθμός μέσα σε αγκύλες (πχ \verb|[2/0]| $\rightarrow$ distance = 2).
+
+	\subsection*{5.7}
+		Η διαδρομή μέσω του R1 (διεπαφή \verb|172.17.17.1|).
+
+	\subsection*{5.8}
+		Εκτελούμε μέσω cli:
+		
+		\begin{verbatim}
+			R1:
+			interface em1
+			link-detect
+			
+			R2:
+			interface em0
+			link-detect
+		\end{verbatim}
+
+	\subsection*{5.9}
+		Κάνουμε δεξί κλικ στο εικονίδιο δικτύου του εικονικού μηχανήματος R1 και ύστερα αποεπιλογή του "Connect Network Adapter 2".
+
+	\subsection*{5.10}
+		Η διαδρομή μέσω του R3 (διεπαφή \verb|172.17.17.6|).
+
+	\subsection*{5.11}
+		Ναι υπάρχει, είναι \verb|inactive|.
+
+	\subsection*{5.12}
+		Στον R1 εκτελούμε \verb|netstat -rn| και παρατηρούμε ότι έχει γίνει η αντίστοιχη αλλαγή στον πίνακα δρομολόγησης:
+		
+		\begin{verbatim}
+			192.168.2.0/24 172.17.17.6
+		\end{verbatim}
+
+	\subsection*{5.13}
+		Στον R2 εκτελούμε \verb|do show ip route| και βλέπουμε ότι είναι ενεργοποιημένη η διαδρομή μέσω του R1 (\verb|172.17.17.1|), διότι το αντίστοιχο καλώδιο δεν έχει αποσυνδεθεί στον R2 και έτσι αυτός δεν αντιλαμβάνεται την διακοπή της ζεύξης που εκτελέσαμε προηγουμένως.
+
+	\subsection*{5.14}
+		Αποσυνδέουμε το ζητούμενο καλώδιο. Εκτελούμε \verb|do show ip route| και διαπιστώνουμε ότι έγινε σωστά η μετάβαση στην εναλλακτική διαδρομή μέσω του R3 (\verb|172.17.17.10|).
+
+	\subsection*{5.15}
+		Στον PC1 εκτελούμε \verb|traceroute 192.168.2.2|, και βλέπουμε ότι στα βήματα 2 και 3 της διαδρομής λαμβάνουμε απαντήσεις από τον R3 (\verb|172.17.17.6|) και τον R2 (\verb|172.17.17.9|) αντίστοιχα, επιβεβαιώνοντας όσα συζητήθηκαν παραπάνω. 
+
+	\subsection*{5.16}
+		Στον PC2 εκτελούμε \verb|ssh lab@192.168.1.2| και ύστερα επανασυνδέουμε τα δύο καλώδια που αποσυνδέσαμε προηγουμένως. Παρατηρούμε ότι η σύνδεση SSH δεν χάνεται.
+
+	\subsection*{5.17}
+		Εκτελώντας \verb|do show ip route| στους R1, R2, διαπιστώνουμε ότι πλέον προτιμώνται οι αρχικές διαδρομές, δηλαδή:
+		
+		\begin{itemize}
+			\item LAN1 $\rightarrow$ LAN2: R1 $\rightarrow$ R2
+			\item LAN2 $\rightarrow$ LAN1: R2 $\rightarrow$ R1
+		\end{itemize}
+		
+		Για να το εξακριβώσουμε, εκτελούμε \verb|traceroute 192.168.2.2| από το PC1 ή \verb|traceroute 192.168.1.2| από το PC2. 
+
+\section*{Άσκηση 6: Διευθύνσεις διαχείρισης (loopback)}
+
+	\subsection*{6.1}
+		Εκτελούμε μέσω cli: 
+		
+		\begin{verbatim}
+			R1:
+			interface lo0
+			ip address 172.22.22.1/32			
+			
+			R2:
+			interface lo0
+			ip address 172.22.22.2/32			
+			
+			R3:
+			interface lo0
+			ip address 172.22.22.3/32
+		\end{verbatim}
+
+	\subsection*{6.2} 
+		Εκτελούμε \verb|"ping 172.22.22.x"| $(\text{x} = 1,2,3)$ από τα PC1 και PC2. 
+		Μόνο τα ping από PC1 προς \verb|172.22.22.1| και PC2 προς \verb|172.22.22.2| επιτυγχάνουν. Τα υπόλοιπα ping όπως είναι αναμενόμενο αποτυγχάνουν, αφού δεν υπάρχουν αντίστοιχες εγγραφές στους πίνακες δρομολόγησης των R1,2,3.
+		
+	\subsection*{6.3}
+		Στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.2/32 172.17.17.2 
+			ip route 172.22.22.3/32 172.17.17.6
+		\end{verbatim}
+
+	\subsection*{6.4}
+		Στον R2 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.1/32 172.17.17.1 
+			ip route 172.22.22.3/32 172.17.17.10
+		\end{verbatim}
+
+
+	\subsection*{6.5}
+		Στον R3 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.1/32 172.17.17.5
+			ip route 172.22.22.2/32 172.17.17.9
+		\end{verbatim}
+		
+	\subsection*{6.6}
+		Ξαναεκτελούμε \verb|ping 172.22.22.x| από τα PC1,PC2. Αυτή τη φορά όλα τα ping επιτυγχάνουν.
+
+	\subsection*{6.7} 
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			PC1: tcpdump -i em0
+			PC2: tcpdump -i em0
+		\end{verbatim}
+		
+		Αν εκτελέσουμε \verb|ping 192.168.1.2| και \verb|ping 192.168.2.2| από την κονσόλα του R3:
+		
+		\begin{verbatim}
+			ICMP source address for ping R3 --> PC1 == 172.17.17.6
+			ICMP source address for ping R3 --> PC2 == 172.17.17.10
+		\end{verbatim}
+
+	\subsection*{6.8}
+		Θα εκτελέσουμε \verb|ping -S 172.22.22.3 192.168.1.2| και \verb|ping -S 172.22.22.3 192.168.2.2|
+
+	\subsection*{6.9}
+		Η δυσκολία έγκειται στο ότι κάθε φορά που δημιουργείται ένα πρόβλημα δρομολόγησης στα PC, πρέπει να ελέγξουμε όλον τον πίνακα δρομολόγησης για να διαπιστώσουμε μήπως το πρόβλημα οφείλεται στην απουσία κάποιας στατικής εγγραφής (που ενδεχομένως ξεχάσαμε να ορίσουμε ή διαγράφηκε με τον επαναπροσδιορισμό της διεύθυνσης IP του PC). Αντίθετα, αν έχουμε ορίσει default διαδρομή, αρκεί να κάνουμε ping σε αυτή για να καταλάβουμε αν το πρόβλημα δημιουργείται εξαιτίας του PC ή κάποιου άλλου κόμβου.
+
+	\subsection*{6.10}
+ 		Όλα τα ping θα ήταν επιτυχή, εκτός από PC1 $\rightarrow$ loopback R2 και PC2 $\rightarrow$ loopback R1, διότι παρόλο που θα μπορούσαν τα πακέτα να προωθηθούν μέσω του R3, δεν έχει οριστεί διαδρομή στον πίνακα δρομολόγησης των R1,2 για τις loopback διευθύνσεις αυτές μέσω του R3. 
+
+	\subsection*{6.11}
+		Στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.2/32 172.17.17.6 2
+			ip route 172.22.22.3/32 172.17.17.2 2
+		\end{verbatim}
+		
+	\subsection*{6.12}
+		Στον R2 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.1/32 172.17.17.10 2
+			ip route 172.22.22.3/32 172.17.17.1 2
+		\end{verbatim}
+
+
+	\subsection*{6.13}
+		Στον R3 μέσω cli:
+		
+		\begin{verbatim}
+			ip route 172.22.22.1/32 172.17.17.9 2
+			ip route 172.22.22.2/32 172.17.17.5 2
+		\end{verbatim}
+		
+	\subsection*{6.14}
+		Στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Επιλεγμένη διαδρομή είναι αυτή μέσω του R2 \verb|172.17.17.2|. 
+
+	\subsection*{6.15}
+		Προσομοιώνουμε τη βλάβη στο WAN1 και παρατηρούμε ότι οι διαδρομές που διέρχονται μέσω του WAN1 έχουν δηλωθεί ως \verb|inactive|.
+
+	\subsection*{6.16}
+		Αυτή τη φορά δεν εμφανίζονται inactive διαδρομές, αφού δεν έχουμε κάνει enable το \verb|link-detect| στις διεπαφές του WAN2.
+
+\section*{Άσκηση 7: Ένα εταιρικό δίκτυο}
+	\subsection*{Υλοποίηση συνδεσμολογίας}
+		\subsubsection*{Αντιστοίχιση Network Adapters σε LAN} 
+			\begin{itemize}
+				\item PC1:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): LAN1
+					\end{itemize}
+				\item PC2:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): LAN2
+					\end{itemize}
+
+				\item R1:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): LAN1
+						\item Network Adapter 2 (em1): WAN1
+						\item Network Adapter 3 (em2): WAN3
+					\end{itemize}
+		
+				\item R2:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): LAN2
+						\item Network Adapter 2 (em1): WAN2
+						\item Network Adapter 3 (em2): WAN4
+					\end{itemize}
+	
+				\item C1:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): CORE
+						\item Network Adapter 2 (em1): WAN1
+						\item Network Adapter 3 (em2): WAN2	
+					\end{itemize}
+		
+				\item C2:
+					\begin{itemize}
+						\item Network Adapter 1 (em0): CORE
+						\item Network Adapter 2 (em1): WAN3
+						\item Network Adapter 3 (em2): WAN4
+					\end{itemize}
+		
+			\end{itemize}
+
+	\subsubsection*{Ορισμός ονομάτων και διευθύνσεων IP μέσω cli στους δρομολογητές}
+		\begin{itemize}
+			\item R1:
+				\begin{verbatim}
+					cli
+					configure terminal 
+					
+					hostname R1
+					
+					interface em0 
+					ip address 192.168.1.1/24
+					
+					interface em1 
+					ip address 10.0.1.1/30
+					
+					interface em2
+					ip address 10.0.1.5/30
+					
+					interface lo0
+					ip address 172.22.1.1/32
+					
+				\end{verbatim}
+			
+			\item R2:	
+				\begin{verbatim}
+					cli
+					configure terminal 
+					
+					hostname R2
+					
+					interface em0
+					ip address 192.168.2.1/24
+					
+					interface em1
+					ip address 10.0.2.1/30
+					
+					interface em2
+					ip address 10.0.2.5/30
+					
+					interface lo0
+					ip address 172.22.2.1/32
+				\end{verbatim}
+				
+			\item C1:
+				\begin{verbatim}
+					cli
+					configure terminal 
+					
+					hostname C1
+					
+					interface em0
+					ip address 10.0.0.1/30
+					
+					interface em1
+					ip address 10.0.1.2/30
+					
+					interface em2
+					ip address 10.0.2.2/30
+					
+					interface lo0
+					ip address 172.22.1.2/32
+				\end{verbatim}
+				
+			\item C2:
+				\begin{verbatim}
+					cli
+					configure terminal 
+					
+					hostname C2
+					
+					interface em0
+					ip address 10.0.0.2/30
+					
+					interface em1
+					ip address 10.0.1.6/30
+					
+					interface em2
+					ip address 10.0.2.6/30
+					
+					interface lo0
+					ip address 172.22.2.2/32	
+				\end{verbatim}		
+		\end{itemize}
+	
+	\subsubsection*{Ενεργοποίηση link-detect σε όλες τις διεπαφές WAN}
+		\begin{itemize}
+			\item R1:
+				\begin{verbatim}
+					interface em1 
+					link-detect
+					
+					interface em2 
+					link-detect
+				\end{verbatim}
+			
+			\item R2:			
+				\begin{verbatim}
+					interface em1 
+					link-detect
+
+					interface em2 
+					link-detect
+				\end{verbatim}
+			
+			\item C1:			
+				\begin{verbatim}
+					interface em1 
+					link-detect
+					
+					interface em2 
+					link-detect
+				\end{verbatim}
+			
+			\item C2:			
+				\begin{verbatim}
+					interface em1 
+					link-detect
+					
+					interface em2 
+					link-detect
+				\end{verbatim}
+		\end{itemize}
+		
+		
+	\subsubsection*{Ορισμός διευθύνσεων IP και προεπιλεγμένης πύλης στα PC}
+		\begin{itemize}
+			\item PC1:
+				\begin{verbatim}
+					ifconfig em0 192.168.1.2/24
+					route add default 192.168.1.1
+				\end{verbatim}
+				
+			\item PC2:
+				\begin{verbatim}
+					ifconfig em0 192.168.2.2/24
+					route add default 192.168.2.1
+				\end{verbatim}
+		\end{itemize}
+			
+	\subsection*{7.1}
+		Στον C1, μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 10.0.1.1
+			ip route 192.168.1.0/24 10.0.0.2  2
+			ip route 192.168.2.0/24 10.0.2.1
+			ip route 192.168.2.0/24 10.0.0.2  2
+		\end{verbatim}
+
+	\subsection*{7.2}
+		Στον C2, μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 10.0.1.5
+			ip route 192.168.1.0/24 10.0.0.1  2
+			ip route 192.168.2.0/24 10.0.2.5
+			ip route 192.168.2.0/24 10.0.0.1  2
+		\end{verbatim}
+		
+	\subsection*{7.3}
+		Στον R1, μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.2.0/24 10.0.1.2
+			ip route 192.168.2.0/24 10.0.1.6  2
+		\end{verbatim}
+
+	\subsection*{7.4}
+		Στον R2, μέσω cli:
+		
+		\begin{verbatim}
+			ip route 192.168.1.0/24 10.0.2.2
+			ip route 192.168.1.0/24 10.0.2.6  2
+		\end{verbatim}
+
+	\subsection*{7.5}
+		Στο PC1 εκτελούμε \verb|ping -c 1 192.168.2.2|. Το ping είναι επιτυχές.
+
+	\subsection*{7.6}
+		Αποσυνδέουμε τη ζεύξη WAN2 και εκτελούμε \verb|ping -c 1 192.168.2.2| το οποίο είναι επιτυχές, άρα το PC1 εξακολουθεί να επικοινωνεί με το PC2.
+
+	\subsection*{7.7}
+		\begin{itemize}
+			\item PC1 $\rightarrow$ PC2: 
+				\begin{itemize}
+					\item PC1 $\rightarrow$ R1$\rightarrow$ C1 $\rightarrow$ C2 $\rightarrow$ R2 $\rightarrow$ PC2
+				\end{itemize} 
+			\item PC2 $\rightarrow$ PC1: 
+				\begin{itemize}
+					\item PC2 $\rightarrow$ R2 $\rightarrow$ C2 $\rightarrow$ R1 $\rightarrow$ PC1
+				\end{itemize}
+		\end{itemize}
+
+	\subsection*{7.8}
+		Στο PC1 εκτελούμε \verb|traceroute 192.168.2.2|. Οι διευθύνσεις IP της διαδρομής είναι:
+		
+		\begin{verbatim}
+			1   192.168.1.1 (R1)
+			2   10.0.1.2 (C1)
+			3   10.0.1.6 (C2)
+			4   10.0.2.5 (R2)
+			5   192.168.2.2 (PC2)
+		\end{verbatim}
+		
+		Παρατηρούμε ότι στην περίπτωση του C2, αντί να εμφανιστεί η διεύθυνση \verb|10.0.0.2| από την οποία διέρχονται τα IP πακέτα του PC1, εμφανίζεται η \verb|10.0.1.6|. Αυτό συμβαίνει διότι η traceroute καταγράφει τις διεπαφές που απαντάνε στον PC1 με μηνύματα "Time to live exceeded". Επειδή λοιπόν η απάντηση του C2 δρομολογείται από άλλη διεπαφή απ' ό,τι τα πακέτα του PC1 -εξαιτίας της προτιμώμενης διαδρομής που έχει διαχειρστική απόσταση 1-, έχουμε αυτή τη συμπεριφορά.
+
+	\subsection*{7.9}
+		Στον PC2 εκτελούμε \verb|traceroute 192.168.1.2|. Οι διευθύνσεις IP της διαδρομής είναι:
+		
+		\begin{verbatim}
+			1   192.168.2.1 (R2)
+			2   10.0.2.6 (C2)
+			3   10.0.1.1 (R1)
+			4   192.168.1.2 (PC1)
+		\end{verbatim}
+		
+		Παρατηρούμε ότι στην περίπτωση του R1, δεν εμφανίζεται η διεύθυνση \verb|10.0.1.5|, αλλά η \verb|10.0.1.1|, καθώς η απάντηση του R1 δρομολογείται μέσω του C1, επειδή η διαδρομή αυτή έχει μικρότερη απόσταση, και άρα μεγαλύτερη προτεραιότητα. 
+
+	\subsection*{7.10}
+		Προσομοιώνουμε βλάβη και στο WAN3, και στο PC1 εκτελούμε \verb|traceroute 192.168.2.2|. Η έξοδος της εντολής είναι:
+		
+		\begin{verbatim}
+			1   192.168.1.1 (R1)
+			2   10.0.1.2 (C1)
+			3   10.0.0.2 (C2)
+			4   10.0.2.5 (R2)
+			5   192.168.2.2 (PC2)
+		\end{verbatim}
+
+		Ακολουθείται λοιπόν η διαδρομή: R1 $\rightarrow$ C1 $\rightarrow$ C2 $\rightarrow$ R2 $\rightarrow$ PC2.
+		
+	\subsection*{7.11}
+		To ping θα ακολουθήσει τη διαδρομή: \\
+		
+		PC1 $\rightarrow$ R1 $\rightarrow$ C1 $\rightarrow$ C2 $\rightarrow$ C1 $\rightarrow$ C2 $\rightarrow$ ... (βρόχος C1-C2) \\
+		
+		Αυτό συμβαίνει επειδή ο C1 δεν μπορεί να προωθήσει το πακέτο μέσω του WAN2, και ο C2 δεν μπορεί να προωθήσει το πακέτο μέσω του WAN4. Έτσι, το πακέτο απλά θα επανεκπεμφθεί πολλές φορές μέχρι να μηδενιστεί το TTL του, και δεν θα φτάσει ποτέ στον προορισμό. Αντίθετα, ο PC1 θα λάβει μήνυμα "Time to live exceeded".
+	
+	\subsection*{7.12} 		
+		Το σημαντικότερο μειονέκτημα μιας τέτοιας τοπολογίας εταιρικού δικτύου είναι το διαχειριστικό overhead για τυχόν μελλοντικές αλλαγές της τοπολογίας, όπως για παράδειγμα η προσθήκη ενός επιπλέον δρομολογητή (έστω R3). Σε μια τέτοια περίπτωση, θα χρειαζόταν να ορίσουμε χειροκίνητα τον πίνακα προώθησης του R3, τυχόν διαδρομές από άλλα μηχανήματα μέσω αυτού, να ελέγξουμε μήπως υπάρχουν καλύτερες διαδρομές από τις ήδη υπάρχουσες λόγω της παρουσίας του R3, να ορίσουμε εναλλακτικές διαδρομές κλπ. Όπως είναι φανερό, κάτι τέτοιο κλιμακώνεται πολύ δύσκολα, ειδικά σε πραγματικές συνθήκες, όπου τα δίκτυα είναι πολύ μεγαλύτερα.
+\end{document}

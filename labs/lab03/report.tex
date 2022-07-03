@@ -1,0 +1,884 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Εργαστηριακή Άσκηση 3 \\ 
+	Τοπικά δίκτυα και μεταγωγείς LAN
+}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{center}
+	\begin{tabular}{|l|l|}
+		\hline
+		\textbf{Ονοματεπώνυμο:} Νικόλαος Παγώνας, el18175  & \textbf{Όνομα PC:} nick-ubuntu \\
+		\hline
+		\textbf{Ομάδα:} 1 (Τρίτη 10:45) & \textbf{Ημερομηνία Εξέτασης:} Τρίτη 22/03/2022 \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\section*{Άσκηση 1: Γέφυρα - Διασύνδεση δύο LAN}
+	
+	\subsection*{1.1}
+		Θα ορίσουμε IPv4 διευθύνσεις για τις διεπαφές των PC1, PC2 με τις εντολές: \\
+		\verb|ifconfig em0 192.168.1.1/24| για το PC1 \\
+		\verb|ifconfig em0 192.168.1.2/24| για το PC2 
+	
+	\subsection*{1.2}
+		Θα ενεργοποιήσουμε τις διεπαφές του Β1 με τις εντολές: \\
+		\verb|ifconfig em0 up| \\
+		\verb|ifconfig em1 up|
+	
+	\subsection*{1.3}
+		Κάνουμε \verb|ping 192.168.1.2| (από το PC1 στο PC2) και \verb|ping 192.168.1.1| (από το PC2 στο PC1). Παρατηρούμε ότι κανένα από τα δύο \verb|ping| δεν λαμβάνει απάντηση.
+	
+	\subsection*{1.4}
+		Με χρήση των \verb|tcpdump -i em0| και \verb|tcpdump -i em1| στο B1 βλέπουμε ότι δεν παράγονται πακέτα ICMP στα LAN1, LAN2, παρά μόνο ARP Requests, επειδή το PC1 προσπαθεί να μάθει την φυσική διεύθυνση του PC2 και αντίστροφα. Επειδή όμως τα PC1, PC2 βρίσκονται σε ξεχωριστά LANs, δεν θα έρθει ποτέ ARP Reply, με αποτέλεσμα να μην παράγονται ICMP πακέτα.
+	
+	\subsection*{1.5}
+		Με την εντολή \verb|ifconfig bridge0 create| δημιουργούμε μία ψευδο-συσκευή γέφυρα \verb|bridge0| στο Β1 και με την εντολή \verb|ifconfig bridge0 addm em0 addm em1 up| προσθέτουμε τις δύο διεπαφές του σαν μέλη στη γέφυρα, και ενεργοποιούμε τη γέφυρα \verb|bridge0|. 
+	
+	\subsection*{1.6}
+		Δοκιμάζουμε πάλι τις εντολές \verb|ping| του ερωτήματος 1.3. Αυτή τη φορά υπάρχει επικοινωνία εξαιτίας της γέφυρας.
+	
+	\subsection*{1.7}
+		Βλέπουμε ότι το TTL είναι 64, άρα το PC2 δεν απέχει κανένα βήμα από το PC1.
+	
+	\subsection*{1.8}
+		Με την εντολή \verb|arp -a| βλέπουμε τους πίνακες \verb|arp| των PC1, PC2, και βλέπουμε ότι και οι δύο έχουν μόνο τις δύο εγγραφές των PC1 και PC2, και καθόλου της γέφυρας. Αυτό συμβαίνει διότι η γέφυρα είναι διαφανής, δηλαδή οι υπολογιστές αγνοούν την ύπαρξή της.
+	
+	\subsection*{1.9}
+		Με τις εντολές \verb|tcpdump -evvv -i em0| και \verb|tcpdump -evvv -i em1| στο B1, επιβεβαιώνουμε ότι γίνεται προώθηση μεταξύ LAN1, LAN2 από το B1, αφού οι φυσικές διευθύνσεις που αναγράφονται στα πλαίσια της καταγραφής είναι αυτές των PC1, PC2.
+	
+	\subsection*{1.10}
+		Όχι, δεν κάνει καμία αλλαγή στις διευθύνσεις MAC, ούτε στις διευθύνσεις IPv4.
+	
+	\subsection*{1.11}
+	 	Όχι, δεν αλλάζει κανένα άλλο πεδίο των πλαισίων.
+	
+	\subsection*{1.12}
+		Κάνουμε \verb|traceroute 192.168.1.2|, δηλαδή από το PC1 στο PC2. Βλέπουμε ότι δεν υπάρχει καμία ένδειξη ύπαρξης του B1 στην έξοδο του \verb|traceroute|. Αυτό συμβαίνει διότι όπως αναφέραμε και προηγουμένως, η λειτουργία της γέφυρας είναι διαφανής, και τα μηχανήματα την αγνοούν τελείως.
+	
+	\subsection*{1.13}
+		Εκτελούμε \verb|ping 192.168.1.2| από το PC1 στο PC2 και με την εντολή \verb|tcpdump -i em1| ξεκινάμε μια καταγραφή στο LAN2.
+	
+	\subsection*{1.14}
+		Με την εντολή \verb|ifconfig em0 192.168.2.1/24| αλλάζουμε την διεύθυνση του PC2. Με το προηγούμενο ping να τρέχει βλέπουμε ότι η γέφυρα συνεχίζει να προωθεί τα πακέτα \verb|ICMP| προς τη διεύθυνση \verb|192.168.1.2|, αλλά όχι στο PC2, αφού αυτό πλέον άλλαξε διεύθυνση.
+	
+	\subsection*{1.15}
+		Το ping δεν είναι επιτυχές, γιατί πλέον το PC2 ανήκει σε διαφορετικό IP υποδίκτυο και απαιτείται η παρουσία router.
+	
+	\subsection*{1.16}
+		Όχι, δεν μπορούμε να κάνουμε \verb|ping 192.168.1.1| από το PC3.
+	
+	\subsection*{1.17}
+		Προσθέτουμε τη διεπαφή \verb|em2| του B1 στην \verb|bridge0| με την εντολή \verb|ifconfig bridge0 addm em2|, και ενεργοποιούμε την \verb|em2| με την εντολή \verb|ifconfig em2 up|.
+	
+	\subsection*{1.18}
+		Επαναλαμβάνουμε τώρα το \verb|ping 192.168.1.1| από το PC3, και αυτή τη φορά λαμβάνουμε απάντηση.
+	
+	\subsection*{1.19}
+		Αν κάνουμε \verb|ping| από το PC1 στο PC3 ή το αντίστροφο, δεν εμφανίζονται πακέτα ICMP στο LAN2, όπως μπορούμε να διαπιστώσουμε από tcpdump στο B1 (ή στο PC2). Αυτό συμβαίνει επειδή η γέφυρα έχει μάθει πλέον πού να προωθήσει το πακέτο ICMP, εξαιτίας του προηγούμενου ping που κάναμε, και δεν χρειάζεται να το στείλει στο LAN2.
+	
+	\subsection*{1.20}
+		Καθαρίζουμε τον πίνακα arp των PC1, PC3 με \verb|arp -d -a|. Επαναλαμβάνουμε τη προηγούμενη καταγραφή στο LAN2 και κάνουμε ping από το PC1 στο PC3. Τώρα εμφανίζεται στην καταγραφή ένα ARP Request από το PC1 που θέλει να μάθει την φυσική διεύθυνση του PC3. Αυτό συμβαίνει επειδή το ARP Request είναι broadcast και προωθείται από την γέφυρα προς όλες τις διεπαφές της, εκτός από αυτήν που ήρθε.
+	
+	\subsection*{1.21}
+		Με την εντολή \verb|ifconfig bridge0| μπορούμε να δούμε ποιες διεπαφές είναι μέλη της γέφυρας \verb|bridge0| (αναγράφονται κάτω-κάτω, με επικεφαλίδα \verb|member|).
+	
+	\subsection*{1.22}
+		Με την εντολή \verb|ifconfig bridge0 addr| μπορούμε να δούμε το περιεχόμενο του πίνακα προώθησης της γέφυρας \verb|bridge0|.
+	
+	\subsection*{1.23}
+		Οι αντιστοιχίσεις είναι οι εξής: 
+		
+		\begin{itemize}
+			\item \verb|08:00:27:82:ed:cb| $\rightarrow$ PC1 (em0)
+			\item \verb|08:00:27:ce:04:8b| $\rightarrow$ PC2 (em1)
+			\item \verb|08:00:27:e7:87:37| $\rightarrow$ PC3 (em2)
+		\end{itemize}
+	
+	\subsection*{1.24}
+		Με την εντολή \verb|ifconfig bridge0 flush| διαγράφουμε τις εγγραφές του πίνακα προώθησης.
+	
+	\subsection*{1.25}
+		Αφαιρούμε από τη γέφυρα \verb|bridge0| τη διεπαφή της στο LAN3 με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge0 deletem em2
+		\end{verbatim}
+	
+	\subsection*{1.26}
+		Καταστρέφουμε τη γέφυρα \verb|bridge0| με την εντολή \verb|ifconfig bridge0 destroy|.
+	
+	\subsection*{1.27}
+		Αφαιρούμε τις διευθύνσεις IP από τις διεπαφές των PC1, PC2, PC3 με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig em0 delete
+		\end{verbatim} 
+
+\section*{Άσκηση 2: Αυτο-εκπαίδευση γεφυρών}
+	
+	\subsection*{2.1}
+		Ορίζουμε διευθύνσεις IPv4 στις διεπαφές των PC1,2,3,4 με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em0 192.168.1.1/24 (PC1)
+			ifconfig em0 192.168.1.2/24 (PC2)
+			ifconfig em0 192.168.1.3/24 (PC3)
+			ifconfig em0 192.168.1.4/24 (PC4)
+		\end{verbatim}
+		
+	\subsection*{2.2}
+		Δημιουργούμε μια ψευδο-συσκευή γέφυρα \verb|bridge1| στο B1 που να περιλαμβάνει τις διεπαφές στα LAN1 και LNK1 με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge1 create
+			ifconfig bridge1 addm em0 addm em1 up
+		\end{verbatim}
+		
+		και ενεργοποιούμε τις διεπαφές με τις εντολές: 
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+		\end{verbatim}
+
+	\subsection*{2.3}
+		Ομοίως:
+		
+		\begin{verbatim}
+			ifconfig bridge2 create
+			ifconfig bridge2 addm em0 addm em1 up
+		\end{verbatim}
+		
+		και:
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+		\end{verbatim}
+
+	\subsection*{2.4}
+		Ομοίως:
+		
+		\begin{verbatim}
+			ifconfig bridge3 create
+			ifconfig bridge3 addm em0 addm em1 up
+		\end{verbatim}
+		
+		και:
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+		\end{verbatim}
+
+	\subsection*{2.5}
+		\begin{itemize}
+			\item PC1: \verb|08:00:27:82:ed:cb|
+			\item PC2: \verb|08:00:27:ce:04:8b|
+			\item PC3: \verb|08:00:27:e7:87:37|
+			\item PC4: \verb|08:00:27:e0:7c:b9|
+		\end{itemize}
+		
+		Αδειάζουμε τους πίνακες arp με την εντολή \verb|arp -d -a| σε όλα τα μηχανήματα.
+
+	\subsection*{2.6}
+		Διαγράφουμε τις εγγραφές του πίνακα προώθησης των B1,2,3 με τις εντολές: 
+		
+		\begin{verbatim}
+			ifconfig bridge1 flush
+			ifconfig bridge2 flush
+			ifconfig bridge3 flush
+		\end{verbatim}
+
+	\subsection*{2.7}
+		Στα PC1,2,3,4 ξεκινάμε μία καταγραφή με tcpdump, με την εντολή \verb|tcpdump -i em0|.
+
+	\subsection*{2.8}
+		Βεβαιωνόμαστε ότι οι πίνακες προώθησης των B1,2,3 είναι κενοί με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge1 addr
+			ifconfig bridge2 addr
+			ifconfig bridge3 addr
+		\end{verbatim}
+		
+		Οι εντολές δεν παράγουν έξοδο, άρα οι πίνακες προώθησης είναι κενοί. \\
+		
+		Εκτελούμε, από νέο παράθυρο στο PC1, την εντολή \verb|ping -c 1 192.168.1.2|. \\
+		
+		Το περιεχόμενο των πινάκων προώθησης είναι πλέον: 
+		
+		\begin{verbatim}
+			B1: 
+			08:00:27:ce:04:8b Vlan1 em1 1190 flags=0<>
+			08:00:27:82:ed:cb Vlan1 em0 1190 flags=0<>
+				
+			B2:
+			08:00:27:ce:04:8b Vlan1 em0 1187 flags=0<>
+			08:00:27:82:ed:cb Vlan1 em0 1187 flags=0<>
+			
+			B3:
+			08:00:27:82:ed:cb Vlan1 em0 1185 flags=0<>
+		\end{verbatim}
+
+	\subsection*{2.9}
+		Σε κάθε μηχάνημα καταγράφηκαν τα εξής:
+		
+		\begin{itemize}
+			\item PC1: 
+				\begin{itemize}
+					\item ICMP Echo Request
+					\item ICMP Echo Reply
+					\item ARP Request
+					\item ARP Reply
+				\end{itemize}
+			\item PC2: 
+				\begin{itemize}
+					\item ICMP Echo Request
+					\item ICMP Echo Reply
+					\item ARP Request
+					\item ARP Reply
+				\end{itemize}
+			\item PC3: 
+				\begin{itemize}
+					\item ARP Request
+				\end{itemize}
+			\item PC4: 
+				\begin{itemize}
+					\item ARP Request
+				\end{itemize}
+		\end{itemize}
+		
+		Η \verb|bridge1| μαθαίνει ότι το PC1 βρίσκεται στη διεπαφή \verb|em0| της, εξαιτίας του ARP request (αφού στα ARP request έχουμε broadcast), ενώ θα μάθει ότι το PC2 βρίσκεται στην \verb|em1| της, λόγω του ARP reply. \\
+		
+		H \verb|bridge2| μαθαίνει ότι το PC1 βρίσκεται στη διεπαφή \verb|em0| της, εξαιτίας του ARP request, ενώ θα μάθει ότι το PC2 βρίσκεται στην \verb|em0| της, λόγω του ARP reply. \\
+		
+		Η \verb|bridge3| μαθαίνει ότι το PC1 βρίσκεται στη διεπαφή \verb|em0| της, εξαιτίας του ARP request.
+		
+		Τα μηνύματα ICMP echo request/reply θα περάσουν μόνο από την \verb|bridge1|, διότι πλέον η \verb|bridge1| ξέρει ότι πρέπει να προωθήσει το ICMP echo request που προορίζεται για το PC2 στη διεπαφή \verb|em1|, ενώ πρέπει να προωθήσει το ICMP echo reply που προορίζεται για το PC1 στη διεπαφή \verb|em0|. Γι' αυτό το λόγο η \verb|bridge3| δεν μαθαίνει κάτι παραπάνω.
+
+	\subsection*{2.10}
+		Από το PC2 εκτελούμε \verb|ping -c 1 192.168.1.1|. Παρατηρούμε ότι οι πίνακες προώθησης των B1,2,3 δεν έχουν αλλάξει. Αυτό συμβαίνει επειδή πλέον το PC2 γνωρίζει την φυσική διεύθυνση του PC1, και επομένως δεν χρειάζεται να εκπέμψει ξανά ARP request (κάτι που θα σήμαινε πως η \verb|bridge3| θα μάθαινε πού βρίσκεται το PC2). Για τα ICMP echo request/reply ισχύουν τα παραπάνω.
+
+	\subsection*{2.11}
+		Από το PC2 εκτελούμε \verb|ping -c 1 192.168.1.4|.
+		
+		Παρατηρούμε ότι όντως ο πίνακας προώθησης του B1 περιέχει τη διεύθυνση MAC του PC4.
+		
+		Αυτό συμβαίνει επειδή το PC4 στέλνει ARP reply για να απαντήσει στο ARP request του PC2. Έτσι, το ARP reply φτάνει στο LNK1, και άρα το βλέπει και η \verb|bridge1|, οπότε καταχωρεί πως το B1 βρίσκεται στη διεπαφή \verb|em1|.
+
+	\subsection*{2.12}
+		Από το PC3 εκτελούμε \verb|ping -c 1 192.168.1.2|. 
+		
+		Παρατηρούμε ότι σε όλους τους πίνακες προστέθηκε μία εγγραφή:
+		
+		\begin{verbatim}
+			B1:
+			+++ 08:00:27:e7:87:37 Vlan1 em1 1163 flags=0<>
+			
+			B2:
+			+++ 08:00:27:e7:87:37 Vlan1 em1 1160 flags=0<>
+			
+			B3:	
+			+++ 08:00:27:e7:87:37 Vlan1 em0 1158 flags=0<>	
+		\end{verbatim}
+		
+		Αυτό συμβαίνει επειδή το PC3 στέλνει ARP request (το οποίο γίνεται broadcast) για να μάθει τη φυσική διεύθυνση του PC2.
+
+	\subsection*{2.13}
+		Από νέο παράθυρο στο PC4 κάνουμε \verb|ping 192.168.1.2|, και από νέο παράθυρο στο PC1 κάνουμε επίσης \verb|ping 192.168.1.2|. Αφήνουμε και τα δύο \verb|ping| να τρέχουν.
+
+	\subsection*{2.14}
+		Μετακινούμε το PC2 από το LNK1 το LAN2, όπου βρίσκεται το PC4. Το ping από το PC4 προς το PC2 συνεχίζει κανονικά, αφού τα δύο μηχανήματα βρίσκονται στο ίδιο εσωτερικό δίκτυο (δεν χρειάζεται έτσι κι αλλιώς γέφυρα).
+		
+				PC4->PC2 συνεχίζει κανονικά
+				PC1->PC2 δεν λαμβάνει απάντηση πλέον
+		Συνεχίζει πλέον κανονικά
+
+	\subsection*{2.15}
+		Το ping από το PC1 προς το PC2 σταματάει να λαμβάνει απάντηση. \\
+		
+		Η γέφυρα \verb|bridge1| συνεχίζει να προωθεί τα ICMP echo request στην διεπαφή \verb|em1|, όμως το PC2 δεν βρίσκεται πλέον στο LNK1. Επίσης, η γέφυρα \verb|bridge2| δεν προωθεί τα ICMP echo request στην \verb|em1| (όπως θα έπρεπε, αν θέλουμε να φτάσουν στο PC2), γιατί νομίζει ότι το PC2 βρίσκεται ακόμα στην \verb|em0|. Γι' αυτό και το ping από το PC1 προς το PC2 δεν λαμβάνει απάντηση.  
+
+	\subsection*{2.16}
+		Στο PC2, εκτελούμε \verb|ping -c 1 192.168.1.3|. Παρατηρούμε ότι πλέον το ping από το PC1 στο PC2 λαμβάνει απάντηση. \\
+		
+		Αυτό συμβαίνει διότι το PC2 στέλνει ένα ICMP echo request προς τη \verb|bridge3|, η οποία ξέρει ότι το PC3 βρίσκεται στην \verb|em0|, οπότε το προωθεί εκεί. Έτσι, το ICMP echo request φτάνει στην \verb|bridge2|, η οποία μαθαίνει έτσι ότι το PC2 πλέον βρίσκεται στην \verb|em1|. \\
+		
+		Με αυτόν τον τρόπο, η \verb|bridge1| προωθεί το ICMP echo request του PC1 (που προορίζεται για το PC2) στην \verb|em1|, η \verb|bridge2| το προωθεί στην \verb|em1|, και η \verb|bridge3| το προωθεί στην \verb|em1|, και πλέον το ping εκτελείται με επιτυχία.
+
+	\subsection*{2.17}
+		Αν δεν εκτελούσαμε το προηγούμενο \verb|ping|, θα έπρεπε να περιμένουμε μέχρι:
+		
+		Να λήξει η εγγραφή της \verb|bridge2| για το πού βρίσκεται το PC2, ώστε το ICMP echo request να χρειαστεί να προωθηθεί στην \verb|em1| (πλημμύρα), και από εκεί να φτάσει μέσω τις \verb|bridge3| στο PC2. Με το ICMP echo reply από το PC2, όλες οι γέφυρες είναι πλέον ενημερωμένες και το ping λειτουργεί κανονικά.
+		
+		Να λήξει η εγγραφή του πίνακα arp που αφορά τη διεύθυνση του PC2, στο PC1. Σε αυτή την περίπτωση, το PC1 στέλνει ARP request για να μάθει τη φυσική διεύθυνση του PC2, και το ARP reply του PC2 ενημερώνει όλους τους πίνακες προώθησης, οπότε το ping δουλεύει πλέον κανονικά. 
+
+\section*{Άσκηση 3: Καταιγίδα πλαισίων εκπομπής} 
+
+	\subsection*{3.1}
+		Δημιουργούμε γέφυρα \verb|bridge0| στο B1 με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge0 create
+		\end{verbatim}
+		
+		Ύστερα ενεργοποιούμε την \verb|bridge0|, προσθέτοντας ως μέλη τις διεπαφές \verb|em0| (LAN1) και \verb|em1| (LNK1) με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge0 addm em0 addm em1 up
+		\end{verbatim}
+		
+		Τέλος, φροντίζουμε να ενεργοποιήσουμε τις διεπαφές που συμμετέχουν στη γέφυρα με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+		\end{verbatim}
+
+	\subsection*{3.2}
+		Αντίστοιχα στο B2 (LAN2 $\rightarrow$ em2, LNK1 $\rightarrow$ em0):
+		
+		\begin{verbatim}
+			ifconfig bridge1 create
+			ifconfig bridge1 addm em2 addm em0 up
+			ifconfig em2 up
+			ifconfig em0 up
+		\end{verbatim}
+		
+
+	\subsection*{3.3}
+		Καταγράφουμε τις διευθύνσεις MAC των PC1,2,3 (εντολή \verb|ifconfig em0|):
+		
+		\begin{itemize}
+			\item PC1: \verb|08:00:27:82:ed:cb|
+			\item PC2: \verb|08:00:27:ce:04:8b|
+			\item PC3: \verb|08:00:27:e7:87:37|
+		\end{itemize}
+		
+		Αδειάζουμε τους πίνακες ARP με την εντολή \verb|arp -d -a|.
+
+	\subsection*{3.4}
+		Ξεκινάμε μια καταγραφή στο PC1 με \verb|tcpdump -i em0| και από το PC2 κάνουμε \verb|ping 192.168.1.3|. Παρατηρούμε μόνο το broadcast ARP request από το PC2 που θέλει να μάθει τη φυσική διεύθυνση του PC3, και επειδή ύστερα η γέφυρα B2 ξέρει ότι το PC3 βρίσκεται στη διεπαφή em2 του LAN2, η σχετική με το ping κίνηση δεν προωθείται προς τη B1, άρα ούτε και στο PC1, οπότε δεν παρατηρούμε κάποια άλλη κίνηση.
+
+	\subsection*{3.5}
+		Ξεκινάμε στο PC3 ένα \verb|ping 192.168.1.1| και το αφήνουμε να τρέχει.
+
+	\subsection*{3.6}
+		Προσθέτουμε στις γέφυρες \verb|bridge0| και \verb|bridge1| τις διεπαφές τους στο LNK2 \verb|em2|, και \verb|em1| αντίστοιχα, με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge0 addm em2
+			ifconfig bridge1 addm em1
+		\end{verbatim}
+		
+		και ενεργοποιούμε τις διεπαφές αυτές με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em2 up
+			ifconfig em1 up
+		\end{verbatim}
+
+	\subsection*{3.7}
+		Σταματάμε το ping και ελέγχουμε το περιεχόμενο των πινάκων προώθησης των γεφυρών \verb|bridge0| και \verb|bridge1|, με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge0 addr
+			ifconfig bridge1 addr
+		\end{verbatim}
+		
+		Τα περιεχόμενα των πινάκων προώθησης είναι:
+		
+		\begin{verbatim}
+			bridge0:
+			08:00:27:82:ed:cb em0
+			08:00:27:e7:87:37 em1
+		
+			bridge1:
+			08:00:27:82:ed:cb em0
+			08:00:27:e7:87:37 em2
+		\end{verbatim}
+		
+
+	\subsection*{3.8}
+		Έχουμε:
+		
+		\begin{itemize}
+			\item B1:
+				\begin{itemize}
+					\item PC1 $\rightarrow$ em0 (LAN1)
+					\item PC3 $\rightarrow$ em1 (LNK1)
+				\end{itemize}
+			\item B2:
+				\begin{itemize}
+					\item PC1 $\rightarrow$ em0 (LNK1)
+					\item PC3 $\rightarrow$ em2 (LAN2)
+				\end{itemize}
+		\end{itemize}				
+
+	\subsection*{3.9}
+		Ξεκινάμε μία καταγραφή στο PC1 με \verb|tcpdump -i em0| και μία καταγραφή στο PC2 πάλι με \verb|tcpdump -i em0|.
+
+	\subsection*{3.10}
+		Κάνουμε εκκαθάριση του πίνακα arp στο PC3 με \verb|arp -d -a| και δίνουμε την εντολή:
+		
+		\begin{verbatim}
+			ping -c 1 192.168.1.1
+		\end{verbatim} 
+		
+		Το ping είναι επιτυχές.
+
+	\subsection*{3.11}
+		Στις καταγραφές όντως παρατηρούμε έναν κατακλυσμό από πακέτα ARP. Αυτό συμβαίνει διότι το B2 στέλνει το broadcast ARP request στις διεπαφές του με τα LNK1 και LNK2, το B1 στέλνει τα ARP requests που λαμβάνει από το LNK1 στο LNK2 και αυτά που λαμβάνει από το LNK2 στο LNK1, το B2 ξανά με τη σειρά του στέλνει τα ARP requests που λαμβάνει από το LNK1 στο LNK2 και αυτά που λαμβάνει από το LNK2 στο LNK1 κ.ο.κ. Έτσι κυκλοφορούν συνεχώς ARP requests στον βρόχο που δημιουργείται στις ζεύξεις LNK1,2. Επίσης, επειδή αυτά τα ARP requests φτάνουν στον PC1, αυτός αναγκάζεται να παράγει συνεχώς ARP replies. Για να σταματήσει αυτός ο καταιγισμός, αποσυνδέουμε το καλώδιο από τις κάρτες δικτύου των B1 και B2, σε μία από τις ζεύξεις LNK1 ή LNK2 (επιλέξαμε τη LNK2), για να σπάσει ο βρόχος. Τελικά, στο B2 οι MAC διευθύνσεις των PC1 και PC3 εμφανίζονται και οι δύο στη διεπαφή \verb|em0| του LNK1, επειδή η B2 νομίζει ότι το ARP request του PC3 (που αρχικά παράχθηκε από τα "δεξιά" της) έρχεται από τα "αριστερά" της λόγω του βρόχου. 
+		
+
+	\subsection*{3.12} 
+		Στον κατακλυσμό της καταγραφής του PC1, γίνεται η ερώτηση:
+		
+		\begin{verbatim}
+			Who has 192.168.1.1? Tell 192.168.1.3.
+		\end{verbatim}
+		
+		και δίνεται η απάντηση:
+		\begin{verbatim}
+			192.168.1.1 is at 08:00:27:82:ed:cb.
+		\end{verbatim}
+		
+	\subsection*{3.13} 
+		Στην καταγραφή στο PC2 παρατηρούμε έναν κατακλυσμό από ARP request, διότι το B2 λαμβάνει τα προαναφερθέντα ARP request που προκύπτουν λόγω του βρόχου, και επειδή τα ARP request είναι broadcast, τα προωθεί σε όλες τις διεπαφές εκτός από εκείνη από όπου τα έλαβε. Άρα όσα ARP request έρχονται από τις διεπαφές της B2 με τα LNK1 και LNK2 προωθούνται στην διεπαφή με το LAN2.
+		
+	\subsection*{3.14} 
+		Τα πακέτα ARP request επαναλαμβάνονται συνεχώς σε αμφότερες τις καταγραφές για τον λόγο που εξηγήθηκε ακριβώς από πάνω για την καταγραφή του PC2. Ακριβώς η ίδια διαδικασία ισχύει και για το LAN1, και άρα για την καταγραφή του PC1.
+
+	\subsection*{3.15}
+		Τα ARP reply δεν προωθούνται στο LAN2 διότι, ενώ στην αρχή το B2 ήξερε πού βρίσκεται το PC3, στη συνέχεια, κατέγραψε (λανθασμένα) ότι το PC3 βρίσκεται από την "αριστερή" μεριά (στην διεπαφή με το LNK1 ή με το LNK2), λόγω του βρόχου που δημιουργήθηκε.
+
+\section*{Άσκηση 4: Συνάθροιση ζεύξεων}
+
+	\subsection*{4.1}
+		Καταστρέφουμε τις γέφυρες στα B1,2 με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge0 destroy
+			ifconfig bridge1 destroy
+		\end{verbatim}
+		
+		και απενεργοποιούμε τις διεπαφές τους με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em0 down
+			ifconfig em1 down
+			ifconfig em2 down
+		\end{verbatim}
+		
+		Στη συνέχεια δημιουργούμε νέες γέφυρες (χωρίς να προσθέσουμε προς το παρόν διεπαφές) με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge0 create
+			ifconfig bridge1 create
+		\end{verbatim}
+
+	\subsection*{4.2}
+		Ενεργοποιούμε όλες τις κάρτες δικτύου στο B1 με τις εντολές: 
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+			ifconfig em2 up
+		\end{verbatim}
+		
+		και δημιουργούμε μία ψευδο-συσκευή συνάθροισης \verb|lagg0| με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig lagg0 create
+		\end{verbatim}
+
+	\subsection*{4.3}
+		Εντάσσουμε στην \verb|lagg0| τις διεπαφές της B1 στα LNK1 (\verb|em1|) και LNK2 (\verb|em2|) και ενεργοποιούμε την ψευδο-συσκευή με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig lagg0 up laggport em1 laggport em2
+		\end{verbatim}
+
+	\subsection*{4.4}
+		Επαναλαμβάνουμε τα δύο προηγούμενα βήματα για το B2, δηλαδή:
+		
+		\begin{verbatim}
+			ifconfig em0 up
+			ifconfig em1 up
+			ifconfig em2 up
+			
+			ifconfig lagg0 create
+			
+			ifconfig lagg0 up laggport em0 laggport em1
+		\end{verbatim}
+		
+		Να σημειωθεί ότι στο B2 ισχύει η αντιστοιχία \verb|LNK1:em0| και \verb|LNK2:em1|.
+
+	\subsection*{4.5}
+		Στο B1, εντάσσουμε στη γέφυρα \verb|bridge0| που δημιουργήσαμε τη διεπαφή του στο LAN1 και την \verb|lagg0|, και ενεργοποιούμε τη γέφυρα, με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge0 addm em0 addm lagg0 up
+		\end{verbatim}
+
+	\subsection*{4.6}
+		Ομοίως, στο B2:
+		
+		\begin{verbatim}
+			ifconfig bridge1 addm em2 addm lagg0 up
+		\end{verbatim}
+
+	\subsection*{4.7}
+		Με \verb|tcpdump -i em0| ελέγχουμε αν εμφανίζεται κίνηση στο PC1 όταν κάνουμε \verb|ping 192.168.1.3| από το PC2. Βλέπουμε ότι στην καταγραφή εμφανίζεται μόνο ένα πλαίσιο ARP request από το PC2 που θέλει να μάθει την φυσική διεύθυνση του PC3. Το B2 γνωρίζει εξαιτίας των ARP request/reply ότι τα PC2,3 βρίσκονται στο LAN2, και έτσι η κίνηση περιορίζεται εκεί, οπότε δεν παρατηρούμε άλλη κίνηση στο PC1.
+
+	\subsection*{4.8}
+		Ξεκινάμε μία καταγραφή στο PC1 με \verb|tcpdump -i em0|.
+
+	\subsection*{4.9}
+		Εκκαθαρίζουμε τον πίνακα arp του PC3 με την εντολή \verb|arp -d -a| και δίνουμε την εντολή \verb|ping -c 1 192.168.1.1|. Το ping επιτυγχάνει, και παρατηρούμε ένα ARP request από το PC3 που θέλει να μάθει την φυσική διεύθυνση του PC1, και το αντίστοιχο ARP reply.
+
+	\subsection*{4.10}
+		Ξεκινάμε μία καταγραφή στη διεπαφή του B1 στο LNK1 (\verb|em1|) και μία άλλη στη διεπαφή του B2 στο LNK2 (\verb|em1|) με τις εντολές \verb|tcpdump -i em1| (στο B1) και \verb|tcpdump -i em1| (στο B2). \\
+		
+		Από το PC2 κάνουμε \verb|ping 192.168.1.1| στο PC1 και το αφήνουμε να τρέχει. Παρατηρούμε ότι τα πακέτα ICMP εμφανίζονται στη ζεύξη LNK1 (αφού εμφανίστηκαν πακέτα μόνο στην καταγραφή του B1). Αυτό συμβαίνει γιατί το default aggregation mode είναι \verb|failover|, το οποίο σημαίνει ότι τα πακέτα στέλνονται μόνο μέσω του primary/master interface, δηλαδή του interface που αντιστοιχεί στο LNK1, και το LNK2 θα χρησιμοποιηθεί μόνο σε περίπτωση αποτυχίας του LNK1.
+		
+	\subsection*{4.11}
+		Αποσυνδέουμε τα καλώδια από τις κάρτες δικτύου των B1 και B2 στη ζεύξη LNK1 (όπου παρατηρήσαμε πακέτα προηγουμένως). Παρατηρούμε ότι η εντολή ping συνεχίζει κανονικά, ενώ τώρα τα πακέτα ICMP μεταφέρονται μέσω της ζεύξης LNK2, αφού η master interface δεν λειτουργεί.
+
+	\subsection*{4.12}
+		Επανασυνδέουμε τις κάρτες δικτύων των B1 και B2, και βλέπουμε ότι τα πακέτα ICMP μεταφέρονται μέσω της LNK1 αυτή τη φορά, αφού η ζεύξη (και άρα η master interface) είναι και πάλι λειτουργική.
+
+\section*{Άσκηση 5: Αποφυγή βρόχων}
+
+	\subsection*{5.1}
+		Στα B1 και B2, καταστρέφουμε τις γέφυρες με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge0 destroy
+			ifconfig bridge1 destroy
+		\end{verbatim} 
+		
+		τις ψευδο-συσκευές συνάθροισης με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig lagg0 destroy
+		\end{verbatim}
+
+		και απενεργοποιούμε τις κάρτες δικτύου με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em0 down
+			ifconfig em1 down
+			ifconfig em2 down
+		\end{verbatim} 
+	
+	\subsection*{5.2}
+		Δημιουργούμε γέφυρα \verb|bridge1| στο B1 που να περιλαμβάνει τις διεπαφές του στα LAN1, LNK1 και LNK2, και ενεργοποιούμε αυτήν και όλες τις διεπαφές με τις εντολές: 
+		
+		\begin{verbatim}
+			ifconfig bridge1 create
+			ifconfig bridge1 addm em0 addm em1 addm em2 up
+			ifconfig em0 up
+			ifconfig em1 up
+			ifconfig em2 up
+		\end{verbatim}
+
+	\subsection*{5.3}
+		Ομοίως για το B2:
+		
+		\begin{verbatim}
+			ifconfig bridge2 create
+			ifconfig bridge2 addm em0 addm em1 addm em2 up
+			ifconfig em0 up
+			ifconfig em1 up
+			ifconfig em2 up
+		\end{verbatim}
+
+	\subsection*{5.4}
+		Ενεργοποιούμε το STP για όλες τις διεπαφές που μετέχουν στην \verb|bridge1| με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge1 stp em0 stp em1 stp em2
+		\end{verbatim}
+
+	\subsection*{5.5}
+		Ομοίως για την \verb|bridge2|:
+		
+		\begin{verbatim}
+			ifconfig bridge2 stp em0 stp em1 stp em2
+		\end{verbatim}
+
+	\subsection*{5.6}
+		Με τις εντολές: 
+		
+		\begin{verbatim}
+			ifconfig bridge1
+			ifconfig bridge2
+		\end{verbatim}
+				
+		βρίσκουμε ότι οι γέφυρες \verb|bridge1| και \verb|bridge2| έχουν Bridge ID ίσο με \verb|8000.08:00:27:6e:b3:91| και \verb|8000.08:00:27:16:2d:45| αντίστοιχα (μορφή \verb|priority.mac-address|, προτεραιότητα 32768 δεκαδικό $\rightarrow$ 8000 δεκαεξαδικό). 
+
+	\subsection*{5.7}
+		Η γέφυρα ρίζα του επικαλύπτοντος δέντρου είναι η \verb|bridge2|, αφού γι' αυτήν ισχύει: \verb|id == root.id|.
+
+	\subsection*{5.8}
+		Είναι \verb|role designated| και \verb|state forwarding|, και για τις 3 διεπαφές \verb|em0,1,2| της \verb|bridge2|.
+
+	\subsection*{5.9}
+		Η ριζική θύρα της μη-ριζικής γέφυρας \verb|bridge1| είναι η διεπαφή στο LNK1.
+
+	\subsection*{5.10}
+		Για την διεπαφή LNK2, η κατάσταση είναι \verb|discarding| και ο ρόλος είναι \verb|alternate|.
+
+	\subsection*{5.11}
+		Για την διεπαφή στο LAN1 της μη-ριζικής γέφυρας \verb|bridge1|, η κατάσταση είναι \verb|forwarding| και ο ρόλος είναι \verb|designated|.
+
+	\subsection*{5.12}
+		Ξεκινάμε μία καταγραφή στην διεπαφή της γέφυρας ρίζας \verb|bridge2| στο LNK1 με την εντολή:
+		
+		\begin{verbatim}
+			tcpdump -evvv -i em0
+		\end{verbatim}
+
+		Βλέπουμε ότι εκπέμπονται BPDU κάθε 2 δευτερόλεπτα.
+		
+	\subsection*{5.13}
+		Χρησιμοποιείται ενθυλάκωση IEEE 802.3.
+
+	\subsection*{5.14}
+		Η διεύθυνση MAC πηγής των BPDU είναι \verb|08:00:27:50:45:8b|, ενώ η διεύθυνση MAC προορισμού είναι \verb|01:80:c2:00:00:00|.
+
+	\subsection*{5.15}
+		Η διεύθυνση MAC πηγής ανήκει στη διεπαφή της γέφυρας ρίζας στο LNK1.
+
+	\subsection*{5.16}
+		Η διεύθυνση MAC προορισμού είναι multicast, αφού το LSBit του MSByte της διεύθυνσης είναι ίσο με 1.
+
+	\subsection*{5.17}
+		Στα πλαίσια BPDU που καταγράψαμε προηγουμένως η root-id είναι \verb|8000.08:00:27:16:2d:45|, η bridge-id είναι \verb|8000.08:00:27:16:2d:45.8001| και το root-path-cost είναι \verb|0|.
+		
+	\subsection*{5.18}
+		Ξεκινάμε μία αντίστοιχη καταγραφή στη διεπαφή με το LNK2 με την εντολή:
+		
+		\begin{verbatim}
+			tcpdump -evvv -i em1
+		\end{verbatim}
+		
+		Συγκρίνοντας με την προηγούμενη καταγραφή, βρίσκουμε ότι αν το bridge-id έχει την μορφή \verb|xxxx.yyyyyy.zzzz|, τότε \verb|xxxx| είναι η προτεραιότητα (τιμή 8000 δεκαεξαδικό) και \verb|zzzz| είναι ο αριθμός της θύρας (8001 για το LNK1, 8002 για το LNK2)
+
+	\subsection*{5.19}
+		Στο B1, εκτελούμε \verb|tcpdump -evvv -i em1| και \verb|tcpdump -evvv -i em2|. Δεν παρατηρούμε κάποια κίνηση που να προέρχεται από αυτές τις διεπαφές.
+
+	\subsection*{5.20}
+		Με \verb|tcpdump -evvv -i em0| παρατηρούμε παραγωγή κίνησης BPDU από την διεπαφή της \verb|bridge1| στο LAN1.
+
+	\subsection*{5.21}
+		Στα προηγούμενα BPDU, είναι:
+		
+		\begin{verbatim}
+			root-id: 8000.08:00:27:16:2d:45
+			bridge-id: 8000.08:00:27:16:2d:45.8002
+			root-pathcost: 0
+		\end{verbatim}
+
+	\subsection*{5.22}
+		Εκτελούμε \verb|ping 192.168.1.2| από το PC1 στο PC2. Το ping είναι επιτυχές.
+
+	\subsection*{5.23}
+		Αποσυνδέουμε το κατάλληλο καλώδιο και παρατηρούμε ότι η επικοινωνία σταματά στο πακέτο με \verb|icmp_seq = 286|, ενώ αποκαθίσταται στο πακέτο με \verb|icmp_seq = 295|, δηλαδή η επικοινωνία έκανε ~8-9 δευτερόλεπτα να αποκατασταθεί. Κανονικά για να ανιχνευθεί ότι το καλώδιο αποσυνδέθηκε χρειάζονται 3 hello times (6 δευτερόλεπτα), ωστόσο (ίσως εξαιτίας επιπλέον καθυστερήσεων μέχρι να παραχθεί το ping και να ληφθεί η απάντηση) χρειάστηκαν 8-9 δευτερόλεπτα για να επανεγκατασταθεί η επικοινωνία.
+
+	\subsection*{5.24}
+		Όχι, δεν υπάρχει διακοπή στην επικοινωνία.
+
+\section*{Άσκηση 6: Ένα πιο πολύπλοκο δίκτυο με εναλλακτικές διαδρομές}
+
+	\subsection*{6.1}
+		Προσθέτουμε στην \verb|bridge1| τη διεπαφή του B1 στο LNK3 και την ενεργοποιούμε με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge1 addm em3
+			ifconfig em3 up
+		\end{verbatim}
+		
+		Ενεργοποιούμε και το STP για τη διεπαφή που προσθέσαμε με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge1 stp em3
+		\end{verbatim}
+
+	\subsection*{6.2}
+		Αντίστοιχα για την \verb|bridge2|:
+		
+		\begin{verbatim}
+			ifconfig bridge2 addm em3
+			ifconfig em3 up
+			ifconfig bridge2 stp em3
+		\end{verbatim}
+
+	\subsection*{6.3}
+		Δημιουργούμε γέφυρα \verb|bridge3| στο B3 με την εντολή \verb|ifconfig bridge3 create|. Προσθέτουμε στη γέφυρα και ενεργοποιούμε τις διεπαφές του B3 στα LAN3, LNK3 και LNK4 με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge3 addm em0 addm em1 addm em2 up
+			ifconfig em0 up
+			ifconfig em1 up
+			ifconfig em2 up
+		\end{verbatim}
+		
+		Τέλος, ενεργοποιούμε το STP σε όλες τις διεπαφές που μετέχουν στην \verb|bridge3| με την εντολή:
+		
+		\begin{verbatim}
+			ifconfig bridge3 stp em0 stp em1 stp em2
+		\end{verbatim}
+
+	\subsection*{6.4}
+		Διαγράφουμε τους πίνακες προώθησης σε όλες τις γέφυρες με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig bridge1 flush
+			ifconfig bridge2 flush
+			ifconfig bridge3 flush
+		\end{verbatim}
+
+		Εκτελούμε \verb|ping 192.168.1.2| και \verb|ping 192.168.1.3|. Είναι και τα δύο επιτυχή.
+
+	\subsection*{6.5}
+		Βλέπουμε ότι η \verb|bridge1| δεν είναι ρίζα του επικαλύπτοντος δέντρου. Για να γίνει, χρησιμοποιούμε την εντολή: 
+		
+		\begin{verbatim}
+			ifconfig bridge1 priority 28672
+		\end{verbatim}
+		
+		Ο αριθμός 28672 επιλέχθηκε επειδή είναι κατά 4096 μικρότερος από το 32768.
+
+	\subsection*{6.6}
+		Το root path cost για τις ζεύξεις αυτές είναι 20000. Αυτό προκύπτει από τον τύπο:
+		
+		\[
+			20 \text{ Tbps } / \text{ bandwidth} = 20 \text{ Tbps } / \textbf{1 Gbps} = 20000.
+		\]
+
+	\subsection*{6.7}
+		Ξεκινάμε δύο καταγραφές στο B3 με τις εντολές (em1 $\rightarrow$ LNK3, em2 $\rightarrow$ LNK4): 
+		
+		\begin{verbatim}
+			tcpdump -evvv -i em1
+			tcpdump -evvv -i em2
+		\end{verbatim}
+
+		Το root path cost στα πλαίσια BPDU από την \verb|bridge1| είναι 0, αφού η \verb|bridge1| είναι η ρίζα, ενώ από την \verb|bridge2| είναι 20000, αφού η \verb|bridge2| συνδέεται απευθείας με την \verb|bridge1| με κόστος 20000.
+		
+	\subsection*{6.8}
+		Η θύρα στο \verb|em1| (LNK3) είναι ριζική, αφού συνδέεται απευθείας με την γέφυρα-ρίζα \verb|bridge1| με κόστος 20000, ενώ το μονοπάτι μέσω της θύρας LNK4 έχει κόστος 40000.  
+
+	\subsection*{6.9}
+		Η άλλη θύρα (στο LNK4) έχει ρόλο designated και κατάσταση forwarding.
+
+	\subsection*{6.10}
+		Με \verb|tcpdump -evvv -i em0| στο B3 βρίσκουμε ότι το root path cost στα πλαίσια BPDU που παράγει η \verb|bridge3| στο LAN3 είναι 20000.
+
+	\subsection*{6.11}
+		Ξεκινάμε ένα \verb|ping 192.168.1.3| από το PC1 στο PC3 και το αφήνουμε να τρέχει.
+
+	\subsection*{6.12}
+		Με την εντολή \verb|ifconfig bridge3 ifpathcost em1 50000| ορίζουμε το κόστος της διεπαφής της \verb|bridge3| στο LNK3, έτσι ώστε να γίνει ριζική θύρα η διεπαφή της στο LNK4. Η τιμή 50000 επιλέχθηκε επειδή είναι μεγαλύτερη από το κόστος μέχρι τη ρίζα μέσω του LNK4 (40000), οπότε με αυτόν τον τρόπο προτιμάται η διαδρομή μέσω του LNK4.
+
+	\subsection*{6.13}
+		Για να αποκατασταθεί η επικοινωνία πέρασαν περίπου 18 δευτερόλεπτα.
+
+	\subsection*{6.14}
+		Η κατάσταση της διεπαφής της \verb|bridge3| στο LNK3 είναι \verb|discarding| ενώ ο ρόλος της είναι \verb|alternate|.
+
+	\subsection*{6.15}
+		Με \verb|tcpdump -evvv -i em1| και \verb|tcpdump -evvv -i em2| βλέπουμε ότι δεν άλλαξε η τιμή κάποιας παραμέτρου.
+
+	\subsection*{6.16}
+		Mε \verb|tcpdump -evvv -i em0| βλέπουμε ότι άλλαξε η τιμή του root path cost σε 40000 από 20000.
+
+	\subsection*{6.17}
+		Παρατηρήσαμε ότι η επικοινωνία αποκαθίσταται ~10 δευτερόλεπτα αφότου αποσυνδέσαμε το καλώδιο.
+
+	\subsection*{6.18}
+		Παρατηρήσαμε ότι η επικοινωνία αποκαθίσταται ~6 δευτερόλεπτα αφότου αποσυνδέσαμε το καλώδιο.
+
+\section*{Άσκηση 7: Εικονικά τοπικά δίκτυα (VLAN)}
+
+	\subsection*{7.1}
+		Στο PC1 δημιουργούμε τις ζητούμενες διεπαφές με τις εντολές:
+		
+		\begin{verbatim}
+			ifconfig em0.5 create vlan 5 vlandev em0 inet 192.168.5.1/24
+			ifconfig em0.6 create vlan 6 vlandev em0 inet 192.168.6.1/24
+		\end{verbatim}
+
+	\subsection*{7.2}
+		Ομοίως στο PC2:
+		
+		\begin{verbatim}
+			ifconfig em0.6 create vlan 6 vlandev em0 inet 192.168.6.2/24
+		\end{verbatim}
+
+	\subsection*{7.3}
+		Ομοίως στο PC3:
+		
+		\begin{verbatim}
+			ifconfig em0.5 create vlan 5 vlandev em0 inet 192.168.5.3/24
+		\end{verbatim}
+
+	\subsection*{7.4}
+		Ναι, μπορούμε να κάνουμε \verb|ping 192.168.6.2| και \verb|ping 192.168.5.3| από το PC1.
+
+	\subsection*{7.5}
+		Όχι, δεν μπορούμε να κάνουμε \verb|ping 192.168.5.3| από το PC2, διότι το PC2 δεν έχει διεπαφή που να ανήκει στο εικονικό δίκτυο \verb|192.168.5.0/24|. 
+
+	\subsection*{7.6}
+		Όχι, δεν μπορούμε να κάνουμε \verb|ping 192.168.6.2| από το PC3, διότι το PC3 δεν έχει διεπαφή που να ανήκει στο εικονικό δίκτυο \verb|192.168.6.0/24|.
+
+	\subsection*{7.7}
+		Αφαιρούμε από το επικαλύπτον δέντρο τη διεπαφή της \verb|bridge1| στο LAN1 με την εντολή \verb|ifconfig bridge1 -stp em0|.
+
+	\subsection*{7.8}
+		Ξεκινάμε τη ζητούμενη καταγραφή με την εντολή \verb|tcpdump -v -e -x -i em0|.
+
+	\subsection*{7.9}
+		Στο PC2 καθαρίζουμε τον πίνακα ARP με \verb|arp -d -a| και εκτελούμε την εντολή \verb|ping -c 1 192.168.1.1|. Η τιμή του πεδίου Ethertype των πλαισίων για τα πακέτα ARP είναι \verb|0x0806|, ενώ για τα πακέτα IPv4 είναι \verb|0x0800|. 
+
+	\subsection*{7.10}
+		Στο PC2 εκτελούμε την εντολή \verb|ping -c 1 192.168.6.1|. Τα πλαίσια Ethernet που παράγονται τώρα είναι κατά 4 bytes μεγαλύτερα, επειδή προστέθηκε το VLAN tag 802.1Q.  
+
+	\subsection*{7.11}
+		Η τιμή του πεδίου Ethertype είναι τώρα \verb|0x8100|, που δηλώνει ετικέτα 802.1Q. Τώρα τα πακέτα ARP ξεχωρίζουν από τα IP από το 17ο και το 18ο byte, που περιέχουν πλέον το Ethertype. 
+
+	\subsection*{7.12}
+		Πληροφορία για το LAN εμφανίζεται στο πεδίο "Tag Control Information".
+
+	\subsection*{7.13}
+		Στο PC1 ξεκινάμε την ζητούμενη καταγραφή με την εντολή \verb|tcpdump -e -vvv -xx -i em0.5|.
+
+	\subsection*{7.14}
+		Στο PC3 καθαρίζουμε τον πίνακα ARP με \verb|arp -d -a| και εκτελούμε την εντολή \verb|ping -c 1 192.168.5.1|. Αυτή τη φορά το πεδίο Ethertype έχει τιμή \verb|0x0806| για τα πακέτα ARP και \verb|0x0800| για τα πακέτα που μεταφέρουν τα μηνύματα ICMP. Βλέπουμε ότι δεν υπάρχει πεδίο σχετικό με το VLAN, αφού η καταγραφή γίνεται εντός του εικονικού δικτύου (διεπαφή \verb|em0.5|).
+
+	\subsection*{7.15}
+		Προσθέτουμε τη ζητούμενη διεπαφή στο επικαλύπτον δέντρο με την εντολή \verb|ifconfig bridge1 stp em0|. Ξεκινάμε μία νέα καταγραφή στο \verb|em0| αυτή τη φορά, με την εντολή \verb|tcpdump -e -vvv -xx -i em0|.
+
+	\subsection*{7.16}
+		Όχι, αφού πλαίσια που μεταφέρουν BPDU είναι IEEE 802.3, και στη θέση του Ethertype έχουν το μήκος (length).
+
+	\subsection*{7.17}
+		Εάν δεν είχαμε αφαιρέσει τη ζητούμενη διεπαφή από το επικαλύπτον δέντρο, θα χρησιμοποιούσαμε το φίλτρο "not stp" για να μην συλλαμβάνουμε πλαίσια BPDU.
+			
+\end{document}

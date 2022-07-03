@@ -1,0 +1,30 @@
+Άσκηση 1
+    PC1 new FreeBSD 12.3
+    NS1 new new.ova
+
+Άσκηση 2
+    PC1 from ex1
+    NS1 from ex1
+
+    PC2 new FreeBSD 12.3
+
+Άσκηση 3
+    PC1 from ex2
+    PC2 from ex2
+    NS1 from ex2
+
+    SRV new new.ova
+
+Άσκηση 4
+    PC1 from ex3
+    PC2 from ex3
+    SRV from ex3
+    NS1 from ex3
+
+Άσκηση 5
+    PC1 from ex4
+    PC2 from ex4
+    SRV from ex4
+    NS1 from ex4
+
+    NS2 from ex2

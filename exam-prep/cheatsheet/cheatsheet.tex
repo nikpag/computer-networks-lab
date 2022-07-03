@@ -1,0 +1,255 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Εντολές
+}
+
+\author{Νίκος Παγώνας}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{FreeBSD}
+	\subsection{sysrc}
+		\begin{verbatim}
+			sysrc firewall_enable="YES"		
+			sysrc firewall_nat_enable="YES"
+			sysrc firewall_logif="YES"	
+			sysrc sshd_enable="YES"
+			sysrc hostname="PC.ntua.lab"
+			sysrc syslogd_flags="-scc"
+			sysrc defaultrouter="<IP address>"
+			sysrc gateway_enable="YES"
+			sysrc ifconfig_em0="DHCP"
+			sysrc -a 
+			sysrc -d <variable>
+			sysrc <variable>
+		\end{verbatim}
+	
+	\subsection{ifconfig}
+		\begin{verbatim}
+			ifconfig <interface> up
+			ifconfig <interface> down
+			ifconfig <interface> delete
+			ifconfig <interface> <IPaddr>/<prefixlen>
+			ifconfig <interface> mtu <mtu_size>
+			ifconfig <interface> ether <MACaddr>		    
+ 
+			ifconfig bridgeX create
+			ifconfig bridgeX destroy
+			ifconfig bridgeX addm <iface1> addm <iface2> addm <iface3> up
+			ifconfig bridgeX deletem <interface>
+			ifconfig bridgeX addr
+			ifconfig bridgeX flush
+			ifconfig bridgeX stp <iface1> stp <iface2> stp <iface3>
+			ifconfig bridgeX -stp <iface1> -stp <iface2> -stp <iface3>
+			ifconfig bridgeX priority <value>
+			ifconfig bridgeX ifpriority <interface> <value>
+			ifconfig bridgeX ifpathcost <interface> <value>
+
+			ifconfig laggX create
+			ifconfig laggX up laggport <interface>
+			ifconfig laggX -laggport <interface>
+			ifconfig laggX laggproto <proto>
+			    Where:
+			        proto = failover | lacp | loadbalance | roundrobin | broadcast | none
+				
+			ifconfig em0.5 create vlan 5 vlandev em0 inet <IPaddr>/<prefixlen>
+			ifconfig em0.5 create
+
+		\end{verbatim}
+		
+	\subsection{route}
+		\begin{verbatim}
+			route add [-net | -host] <dest> <gateway>
+			route add [-net | -host] <dest> -interface <interface>		    
+			route add default <gateway>
+			route change <dest> <gateway>
+			route show <dest>
+			route del <dest>
+			route flush
+		\end{verbatim}
+	
+	\subsection{Other}
+		\begin{verbatim}
+			netstat (-i | -a | -s) 
+		
+			sysctl net.inet.ip.forwarding=1
+			
+			arp (-a | -d x.x.x.x | -da | -s | -s x.x.x.x yy:yy:yy:yy:yy:yy)
+							
+			service netif restart 
+					
+			tcpdump (-s snaplen | -l | -w | -r) [ proto[expr:size] ]
+		\end{verbatim}
+	
+	\subsection{IPFW}
+		\subsubsection{Kernel modules}
+			\begin{verbatim}
+				kldload <module>
+				kldunload <module>
+				kldstat
+			\end{verbatim}
+			
+		\subsubsection{Firewall}
+			\begin{verbatim}
+					ipfw add <rule>
+					ipfw delete <number>
+					ipfw flush
+					ipfw list
+					ipfw show
+					ipfw zero
+					ipfw nat
+					ipfw add <rule_nr> <action> [log] <proto> \ 
+					    from <src> <src_port> to <dst> <dst_port> <options>
+					        Where:
+					            action = allow | deny | check-state | nat <nat_nr> | skipto <number> 
+					            proto = ip/all | ip4/ipv4 | ip6/ipv6 | tcp | udp
+					            src/dst = any | me | <address>
+					            src_port/dst_port = <port_name> | <port_number> 
+					            options = in/out | recv/xmit/via | icmptypes ... 
+					                             | setup | established | keep-state 
+			\end{verbatim}
+		
+		\subsubsection{NAT}
+			\begin{verbatim}
+				ipfw nat <nat_number> config <nat-configuration>
+				    Where <nat-configuration> options are:
+				        ip <ip_address>
+				        if <nic>
+				        same_ports
+				        reset
+				        deny_in
+				        unreg_only
+				        redirect_addr <localIP> <publicIP>
+				        redirect_proto <proto> <localIP> [<publicIP> [<remoteIP>]]
+				        redirect_port <proto> <targetIP>:<targetPort> \
+				            [<aliasIP>:]<aliasPort> [<remoteIP>[:<remotePort>]]
+				        ipfw nat <nat_number> show config
+				        ipfw nat show config
+			\end{verbatim}
+		
+		\subsubsection{IPv6}
+		
+		\begin{verbatim}
+			ipfw nat64lsn <name> create <options>
+			ipfw nat64clat <name> create <options>
+			
+			### STATEFUL NAT64 OPTIONS ###
+			prefix6 <ipv6_prefix>/<length>
+			prefix4 <ipv4_prefix>/<length>
+			
+			### XLAT464 OPTIONS ###
+			clat_prefix <ipv6_prefix>/<length>
+			plat_prefix <ipv6_prefix>/<length>
+			
+			### UNIVERSAL OPTIONS ###
+			allow_private
+			log
+			
+			ipfw nat64lsn/nat64clat <name> show
+			ipfw nat64lsn <name> show states
+		\end{verbatim}	
+
+\section{Quagga}
+	\subsection{General}
+		\begin{verbatim}		
+			do show version
+			do show interface [iface]
+			do show ip forwarding
+			do show ip route
+					
+			do show running-config / write terminal
+			do write memory / write file
+					
+			hostname <host>
+			password <pass>
+			enable password <pass>
+			service password-encryption
+			ip forwarding 
+			ip route <network> <gateway> [distance]
+			no <command>
+			interface <ifname>
+			router <protocol>
+					
+			(config-if)# ip address
+			(config-if)# description
+			(config-if)# bandwidth
+			(config-if)# shutdown
+			(config-if)# link-detect
+		\end{verbatim}
+	
+	\subsection{RIP}
+		\begin{verbatim}
+			router rip
+			
+			(config-router)# network <netaddr>
+			(config-router)# network <ifname>
+			(config-router)# version <1-2>
+			(config-router)# passive-interface <ifname>
+			(config-router)# neighbor <IPaddr>
+			(config-router)# timers basic <update> <timeout> <garbage>
+			
+			do show ip rip
+			do show ip route rip
+			do show ip rip status
+		\end{verbatim}
+
+	\subsection{OSPF}
+		\begin{verbatim}
+			router ospf
+			
+			(config-router)# network <netaddr> area <areaID>
+			(config-router)# passive-interface <ifname>
+			(config-router)# router-id <id>
+			(config-router)# area <area-id> stub
+			(config-router)# ospf network <network>
+			
+			do show ip ospf
+			do show ip ospf route
+			do show ip route ospf
+			do show ip ospf interface <ifname>
+			do show ip ospf neighbor <ifname>
+			do show ip ospf database
+			do show ip ospf database <LSAtype> [self-originate, adv-router <router-id>]
+			do show ip ospf border-routers
+		\end{verbatim}
+
+	\subsection{BGP}
+		\begin{verbatim}
+			router bgp <ASnumber>
+			
+			(config-router)# network <netaddr>
+			(config-router)# neighbor <IPaddr> remote-as <ASnumber>
+			(config-router)# neighbor <IPaddr> next-hop-self
+			(config-router)# neighbor <IPaddr> shutdown
+			(config-router)# bgp router-id <IPaddr>
+			(config-router)# redistribute <static|connected|rip|ospf>
+			(config-router)# aggregate-address
+			
+			do show ip bgp
+			do show ip route bgp
+			do show ip bgp summary
+			do show ip bgp <netaddr>
+			do show ip bgp neighbors
+			do show ip bgp neighbors <IPaddr>
+			do show ip bgp neighbors <IPaddr> advertised-routes
+			do show ip bgp neighbors <IPaddr> routes
+			do clear ip bgp <IPaddr>
+			
+			neighbor <IPaddr> prefix-list <PrefixListName> [in|out]
+			ip prefix-list <PrefixListName> (permit|deny) <prefix>
+			
+			neighbor <IPaddr> route-map <RouteMapName> [in|out]
+			route-map <RouteMapName> (permit|deny) <order>
+		\end{verbatim}
+\end{document}

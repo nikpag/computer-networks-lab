@@ -1,0 +1,89 @@
+PC1#1
+08:59:03.391878 
+080027a3d0ee (PC3) --> Broadcast 
+ARP request who-has 192.168.6.1 tell 192.168.6.18
+
+PC1#2
+08:59:03:391978 
+080027023ec4 (PC1) --> 080027a3d0ee (PC3) 
+ARP reply 192.168.6.1 is-at 080027023ec4
+
+PC1#3
+08:59:03:393503
+080027a3d0ee (PC3) --> 080027023ec4 (PC1)
+192.168.6.18 > 192.168.1.2 ICMP Echo request
+
+PC1#4
+08:59:03:393577
+080027023ec4 (PC1) --> Broadcast
+ARP request who-has 192.168.1.2 tell 192.168.1.1
+
+PC1#5
+08:59:03:394557
+0800275f029c (PC2) --> 080027023ec4 (PC1)
+ARP reply
+
+PC1#6
+08:59:03:394617
+080027023ec4 (PC1) --> 0800275f029c (PC2)
+ICMP echo request
+
+PC1#7
+08:59:03:395559
+0800275f029c (PC2) --> 080027023ec4 (PC1)
+ICMP echo reply
+
+PC1#8
+08:59:03:396521
+080027023ec4 (PC1) --> 080027a3d0ee (PC3)
+ICMP echo reply
+
+PC2#1
+08:58:52:122956
+080027a3d0ee (PC3) --> Broadcast
+ARP request
+
+PC2#2
+08:58:52:125053
+080027023ec4 (PC1) --> Broadcast
+ARP request
+
+PC2#3
+08:58:52:125126
+0800275f029c (PC2) --> 080027023ec4 (PC1)
+ARP reply
+
+PC2#4
+08:58:52:126174
+080027023ec4 (PC1) --> 0800275f029c (PC2)
+ICMP echo request 
+
+PC2#5
+08:58:52:126247
+0800275f029c (PC2) --> 080027023ec4 (PC1)
+ICMP echo reply
+
+PC3#1
+08:58:09:968125
+080027a3d0ee (PC3) --> Broadcast
+ARP request 
+
+PC3#2
+08:58:09:969964
+080027023ec4 (PC1) --> 080027a3d0ee (PC3)
+ARP reply
+
+PC3#3
+08:58:09:970011
+080027a3d0ee (PC3) --> 080027023ec4 (PC1)
+ICMP echo request
+
+PC3#4
+08:58:09:971795
+080027023ec4 (PC1) --> Broadcast
+ARP request
+
+PC3#5
+08:58:09:973823
+080027023ec4 (PC1) --> 080027a3d0ee (PC3)
+ICMP echo reply

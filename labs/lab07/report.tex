@@ -1,0 +1,1304 @@
+\documentclass[a4paper, 12pt]{article}
+
+\input{/home/nick/latex-preambles/xelatex.tex}
+
+\setmainfont{Minion Pro}
+
+\newcommand{\imagesPath}{.}
+
+\title{
+	\textbf{Εργαστήριο Δικτύων Υπολογιστών} \\~\\
+	Εργαστηριακή Άσκηση 7 \\ 
+	Δυναμική δρομολόγηση RIP
+}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\begin{center}
+	\begin{tabular}{|l|l|}
+		\hline
+		\textbf{Ονοματεπώνυμο:} Νικόλαος Παγώνας, el18175  & \textbf{Όνομα PC:} nick-ubuntu \\
+		\hline
+		\textbf{Ομάδα:} 1 (Τρίτη 10:45) & \textbf{Ημερομηνία Εξέτασης:} Τρίτη 12/04/2022 \\
+		\hline
+	\end{tabular}
+\end{center}
+
+\section*{Άσκηση 1: Εισαγωγή στο RIP}
+	\subsection*{1}
+		Εκτελούμε \verb|service frr stop|.
+			
+	\subsection*{2}
+		Εκτελούμε \verb|touch /usr/local/etc/frr/ripd.conf|.
+
+	\subsection*{3}
+		Εκτελούμε \verb|chown frr:frr /usr/local/etc/frr/ripd.conf|.
+
+	\subsection*{4}
+		Αλλάζουμε τη ζητούμενη γραμμή του \verb|/etc/rc.conf| σε \verb|frr_daemons="zebra staticd ripd"|.
+
+	\subsection*{5}
+		Εκτελούμε \verb|service frr start|.
+
+	\subsection*{6}
+		Κλείνουμε το μηχάνημα και το κάνουμε export σε αρχείο με όνομα \verb|RIP.ova|. 
+
+	\subsection*{7}
+		Αποθηκεύουμε το αρχείο \verb|.ova| για μελλοντική χρήση.
+	
+	\subsection*{1.1}
+		Μέσω vtysh στο PC1:
+		
+		\begin{verbatim}
+			configure terminal
+			
+			hostname PC1
+			
+			interface em0
+			ip address 192.168.1.2/24
+			
+			ip route 0.0.0.0/0 192.168.1.1
+		\end{verbatim}
+
+	\subsection*{1.2}
+		Μέσω vtysh στο PC2:
+		
+		\begin{verbatim}
+			configure terminal
+			
+			hostname PC2
+			
+			interface em0
+			ip address 192.168.2.2/24
+			
+			ip route 0.0.0.0/0 192.168.2.1
+		\end{verbatim}
+
+	\subsection*{1.3}
+		Μέσω cli στο R1:
+		
+		\begin{verbatim}
+			configure terminal
+			
+			hostname R1
+			
+			interface em0
+			ip address 192.168.1.1/24
+			
+			interface em1
+			ip address 172.17.17.1/30
+		\end{verbatim}
+
+	\subsection*{1.4}
+		Μέσω cli στο R1:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Δεν βλέπουμε κάποια εγγραφή που να αρχίζει με "S", άρα δεν έχουμε στατικές εγγραφές.
+
+	\subsection*{1.5}
+		Στον R1 σε global configuration mode γράφουμε \verb|router| και μετά πατάμε \verb|"?"|. Εμφανίζονται 7 διαθέσιμα πρωτόκολλα:
+		
+		\begin{verbatim}
+			babel 
+			bgp
+			isis
+			ospf
+			ospf6
+			rip
+			ripng
+		\end{verbatim} 
+
+	\subsection*{1.6}
+		Στον R1 μέσω cli:
+		
+		\begin{verbatim}
+			router rip
+		\end{verbatim}
+
+	\subsection*{1.7}
+		Στον R1 πατάμε \verb|"?"|. Οι διαθέσιμες εντολές είναι 18.
+
+	\subsection*{1.8}
+		Με την εντολή \verb|version 2|.
+
+	\subsection*{1.9}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			network 192.168.1.0/24
+		\end{verbatim}
+
+	\subsection*{1.10}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			network 172.17.17.0/30
+		\end{verbatim}
+
+	\subsection*{1.11}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			exit
+			do show ip route
+		\end{verbatim}
+		
+		Δεν έχει αλλάξει κάτι στον πίνακα δρομολόγησης του R1.
+
+	\subsection*{1.12}
+		Επαναλαμβάνουμε για τον R2:
+		
+		\begin{verbatim}
+			1.3
+			
+			configure terminal
+			
+			hostname R2
+			
+			interface em0
+			ip address 172.17.17.2/30
+			
+			interface em1
+			ip address 192.168.2.1/24
+			
+			1.4
+			
+			do show ip route    # OK, no static records found
+			
+			1.5
+			
+			in global configuration mode: 
+			
+			router ?    # 7 available protocols
+			
+			1.6
+			
+			router rip
+			
+			1.7
+			
+			?    # 18 available commands
+			
+			1.8
+			
+			version 2
+			
+			1.9
+			
+			network 192.168.2.0/24
+			
+			1.10
+			
+			network 172.17.17.0/30
+		\end{verbatim}
+		
+		Στο PC1 εκτελούμε \verb|ping 192.168.2.2|. Τα PC1 και PC2 επικοινωνούν μεταξύ τους.
+
+	\subsection*{1.13}
+		Με την εντολή \verb|do show ip route|. Βλέπουμε ότι έχει προστεθεί μία εγγραφή:
+		
+		\begin{verbatim}
+			R>* 192.168.1.0/24 [120/2] via 172.17.17.1, em0, 00:05:08
+		\end{verbatim}
+
+	\subsection*{1.14}
+		Επιβεβαιώνουμε ότι τα PC επικοινωνούν με \verb|ping 192.168.2.2| από το PC1. Στον R1 εκτελούμε \verb|show ip rip|. Υπάρχουν εγγραφές για τα δίκτυα \verb|172.17.17.0/30|, \verb|192.168.1.0/24| και  \verb|192.168.2.0/24|.
+
+	\subsection*{1.15}
+		Το νόημα είναι ότι σαν επόμενο βήμα επιλέγεται το ίδιο το μηχάνημα (δηλαδή ο R1), γιατί ο προορισμός είναι απευθείας συνδεδεμένος με αυτόν.		
+
+	\subsection*{1.16}
+		Η πηγή πληροφόρησης φαίνεται στο πεδίο "From". Έτσι οι πηγές πληροφόρησης είναι:
+		
+		\begin{itemize}
+			\item \verb|172.17.17.0/30| $\rightarrow$ \verb|0.0.0.0|: από το ίδιο το μηχάνημα (self), Metric 1
+			\item \verb|192.168.1.0/24| $\rightarrow$ \verb|0.0.0.0|: από το ίδιο το μηχάνημα (self), Metric 1
+			\item \verb|192.168.2.0/24| $\rightarrow$ \verb|172.17.17.2|: από τον R2 (\verb|172.17.17.2|), Metric 2
+		\end{itemize}
+		
+		Το Metric δείχνει πόσα βήματα μακριά βρίσκεται ο προορισμός.
+
+	\subsection*{1.17}
+		Στον R2 εκτελούμε \verb|show ip route|. Εμφανίζονται 4 εγγραφές.
+
+	\subsection*{1.18}
+		Ξεχωρίζουν επειδή στην αρχή υπάρχει ο χαρακτήρας \verb|"R"|.
+
+	\subsection*{1.19}
+		Δηλώνονται με το σύμβολο \verb|">"|.
+
+	\subsection*{1.20}
+		Δηλώνονται με το σύμβολο \verb|"*"|.
+
+	\subsection*{1.21}
+		Είναι 120, κάτι που φαίνεται στην αντίστοιχη εγγραφή μέσα σε αγκύλες: \verb|[120/2]|, όπου το πρώτο νούμερο είναι η διαχειριστική απόσταση και το δεύτερο είναι το μήκος της διαδρομής, δηλαδή 2.
+
+	\subsection*{1.22} 
+		Με την εντολή \verb|do show ip rip status|. Αποστέλλονται ενημερώσεις κάθε 30 δευτερόλεπτα, με απόκλιση $\pm\text{50\%}$.
+
+	\subsection*{1.23}
+		Είναι ενεργοποιημένο στις διεπαφές \verb|em0| και \verb|em1|, και στη δρομολόγηση μετέχουν τα δίκτυα \verb|172.17.17.0/30| και \verb|192.168.1.0/24|.
+	
+	\subsection*{1.24}
+		Λαμβάνει πληροφορία από τον R2 (\verb|172.17.17.2|). Ο χρόνος τελευταίας ενημέρωσης δηλώνει πόσος χρόνος έχει περάσει από την τελευταία φορά που έλαβε ενημέρωση ο R1 από τον R2.
+
+	\subsection*{1.25}
+		Εκτελούμε \verb|do show ip rip|. \\
+		
+		Το πεδίο "Time" αντιστοιχεί στον χρόνο "timeout" που αν λήξει, η διαδρομή παύει να ισχύει, όμως δεν αφαιρείται ακόμα από τον πίνακα δρομολόγησης (προεπιλεγμένη τιμή 180 sec). Κάθε φορά που λαμβάνεται μία ενημέρωση, το "Last Update" μηδενίζεται και το "Time" τίθεται στην προεπιλεγμένη τιμή. Η σχέση που τα συνδέει είναι: $\text{Time} = 180 \text{ sec} - \text{Last Update}$.
+
+	\subsection*{1.26}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			exit
+			netstat -rn
+		\end{verbatim}
+		
+		Βλέπουμε ότι υπάρχει μια εγγραφή με σημαίες "UG1":
+		
+		\begin{verbatim}
+			Destination      Gateway       Flags
+			192.168.2.0/24   172.17.17.2   UG1
+		\end{verbatim}
+		
+		Επειδή η σημαία "1" αντιστοιχεί σε "Protocol specific routing flag \#1", μπορούμε να καταλάβουμε ότι είναι δυναμική αφού είναι ορισμένη από το RIP.
+
+\section*{Άσκηση 2: Λειτουργία του RIP}
+
+	\subsection*{2.1}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em0| και περιμένουμε τουλάχιστον ένα λεπτό.
+
+	\subsection*{2.2}
+		Βλέπουμε τόσο μηνύματα RIP Request όσο και RIP Response.
+
+	\subsection*{2.3}
+		\begin{itemize}
+			\item Πηγή: \verb|192.168.1.1|, θύρα \verb|520|
+			\item Προορισμός: \verb|224.0.0.9|, θύρα \verb|520|
+		\end{itemize}
+		
+		Η διεύθυνση πηγής είναι αυτή του PC1. Η διεύθυνση προορισμού είναι αυτή που χρησιμοποιεί το RIPv2 για multicast μόνο στο τοπικό υποδίκτυο.
+		
+	\subsection*{2.4}
+		Όχι.
+
+	\subsection*{2.5}
+		Έχει τιμή 1.
+
+	\subsection*{2.6}
+		Το RIP χρησιμοποιεί UDP και τη θύρα 520.
+
+	\subsection*{2.7}
+		Διαφημίζονται 2 δίκτυα, τα \verb|172.17.17.0/30| και \verb|192.168.2.0/24|. Δεν υπάρχει διαφήμιση για το δίκτυο του LAN1. 
+
+	\subsection*{2.8}
+		Τα βλέπουμε περίπου κάθε 30 sec (απόκλιση $\pm$15 sec), επιβεβαιώνοντας το ερώτημα 1.22. 
+
+	\subsection*{2.9}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em1|. Παρατηρούμε όντως μηνύματα από τον R1. 
+
+	\subsection*{2.10}
+		Διαφημίζεται ένα δίκτυο, το \verb|192.168.1.0/24|, ενώ λείπουν τα \verb|172.17.17.0/30| και \verb|192.168.2.0/24|.
+
+	\subsection*{2.11}
+		Ναι, παρατηρούμε μηνύματα από τον R2. Διαφημίζεται το δίκτυο \verb|192.168.2.0/24|. 
+		
+	\subsection*{2.12}
+		Όταν διαφημίζουν ένα δίκτυο έχουν μέγεθος 24 bytes, όταν διαφημίζουν δύο έχουν μέγεθος 44 bytes, ενώ το μέγεθος της κάθε εγγραφής RIP είναι 20 bytes. 
+
+	\subsection*{2.13}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em0 "udp port 520"|.
+
+	\subsection*{2.14}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			no network 192.168.2.0/24
+		\end{verbatim} 
+		
+		Αμέσως μετά τη διαγραφή εμφανίστηκε RIP Response σχετικό με το δίκτυο \verb|192.168.2.0/24|. Σε αυτό το μήνυμα, η διαδρομή προς το \verb|192.168.2.0/24| διαφημίζεται με κόστος 16 (άπειρο).
+
+	\subsection*{2.15}
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			network 192.168.2.0/24
+		\end{verbatim}
+		
+		Αμέσως μετά την αλλαγή εμφανίζεται μήνυμα RIP Response σχετικό με το δίκτυο \verb|192.168.2.0/24|, το οποίο διαφημίζει κόστος 2 για τη διαδρομή μέσω του \verb|192.168.2.0/24|.
+
+	\subsection*{2.16}
+		Στον R2 εκτελούμε \verb|tcpdump -vni em0 "udp port 520 && src 172.17.17.1|.
+
+	\subsection*{2.17}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			no network 192.168.1.0/24
+		\end{verbatim}
+		
+		Παράγεται αμέσως μήνυμα RIP στο WAN1 σχετικό με τη διαγραφή.
+		
+	\subsection*{2.18} 
+		Όχι, δεν παράχθηκε, διότι το \verb|192.168.1.0/24| (LAN1) που διαγράφηκε δεν διαφημίζεται έτσι κι αλλιώς στην ίδια τη ζεύξη του.
+
+	\subsection*{2.19}
+		Στον R2 εκτελούμε \verb|no network 192.168.2.0/24| και αμέσως μετά στον R1 εκτελούμε \verb|netstat -rn|. Όντως το \verb|192.168.2.0/24| έχει διαγραφεί από τον πίνακα δρομολόγησης.
+
+	\subsection*{2.20}
+		Στον R1 εκτελούμε \verb|do show ip rip|. Αρχικά το \verb|192.168.2.0/24| δεν έχει διαγραφεί από τον πίνακα διαδρομών RIP του R1, ύστερα όμως από δύο λεπτά διαγράφεται κι από εκεί, αφού πλέον έχει παρέλθει η προκαθορισμένη περίοδος "garbage".
+
+	\subsection*{2.21}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			network 192.168.1.0/24
+		\end{verbatim}
+		
+		Στον R2 εκτελούμε:
+		
+		\begin{verbatim}
+			network 192.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{2.22}
+		Μπορούμε εκτελώντας στον R1:
+		
+		\begin{verbatim}
+			passive-interface em0
+		\end{verbatim}
+		
+		Αντίστοιχα στον R2:
+
+		\begin{verbatim}
+			passive-interface em1
+		\end{verbatim}
+	
+	\subsection*{2.23}
+		Πλέον επειδή οι διεπαφές των δρομολογητών στα LAN1 και LAN2 βρίσκονται σε παθητική κατάσταση, δεν παρατηρούνται RIP Responses στα δίκτυα αυτά.
+
+\section*{Άσκηση 3: Εναλλακτικές διαδρομές}
+	Επειδή κλείσαμε όλα τα μηχανήματα, στήνουμε το δίκτυο της άσκησης από την αρχή με τις παρακάτω εντολές. Αυτή η διαδικασία δεν αντιστοιχεί σε κάποιο ερώτημα και μπορεί να αγνοηθεί κατά τη διόρθωση.
+	
+	\begin{verbatim}
+		--------------PC1-------------
+		vtysh
+		configure terminal
+		
+		hostname PC1
+		
+		interface em0
+		ip address 192.168.1.2/24
+		
+		ip route 0.0.0.0/0 192.168.1.1 
+		
+		--------------PC2-------------
+		vtysh
+		configure terminal
+		
+		hostname PC2
+		
+		interface em0
+		ip address 192.168.2.2/24
+		
+		ip route 0.0.0.0/0 192.168.2.1
+		
+		--------------R1--------------
+		cli
+		configure terminal
+		
+		hostname R1
+		
+		LAN1: interface em0
+		ip address 192.168.1.1/24
+		
+		WAN1: interface em1
+		ip address 172.17.17.1/30
+		
+		router rip
+		
+		version 2
+		
+		network 192.168.1.0/24
+		network 172.17.17.0/30
+		
+		passive-interface em0
+		
+		--------------R2--------------
+		cli
+		configure terminal
+		
+		hostname R2
+		
+		WAN1: interface em0
+		ip address 172.17.17.2/30
+		
+		LAN2: interface em2 
+		ip address 192.168.2.1/24
+		
+		router rip
+		
+		version 2
+		
+		network 192.168.2.0/24
+		network 172.17.17.0/30
+		
+		passive-interface em2
+	\end{verbatim}
+	
+	\subsection*{3.1}
+		Στον R1 εκτελούμε (σημειωτέον ότι \verb|em0| $\rightarrow$ LAN1, \verb|em1| $\rightarrow$ WAN1, \verb|em2| $\rightarrow$ WAN2):
+		
+		\begin{verbatim}
+			cli 
+			configure terminal
+			
+			interface em2
+			ip address 172.17.17.5/30
+			
+			router rip
+			network 172.17.17.4/30
+		\end{verbatim}
+
+	\subsection*{3.2}
+		Στον R2 εκτελούμε (σημειωτέον ότι \verb|em0| $\rightarrow$ WAN1, \verb|em1| $\rightarrow$ WAN3, \verb|em2| $\rightarrow$ LAN2):
+		
+		\begin{verbatim}
+			cli
+			configure terminal
+			
+			interface em1
+			ip address 172.17.17.9/30
+			
+			router rip
+			network 172.17.17.8/30
+		\end{verbatim}
+
+	\subsection*{3.3}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			cli
+			configure terminal
+			
+			hostname R3
+			
+			interface em0
+			ip address 172.17.17.6/30
+			
+			interface em1
+			ip address 172.17.17.10/30
+			
+			router rip
+			network 172.17.17.4/30
+			network 172.17.17.8/30
+		\end{verbatim}
+
+	\subsection*{3.4}
+		Στον R1 εκτελούμε \verb|do show ip route|. O R1 έχει μάθει δυναμικά τα δίκτυα:
+		
+		\begin{verbatim}
+			172.17.17.8/30
+			193.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{3.5}
+		Στον R2 εκτελούμε \verb|do show ip route|. Ο R2 έχει μάθει δυναμικά τα δίκτυα:
+		
+		\begin{verbatim}
+			172.17.17.4/30
+			192.168.1.0/24
+		\end{verbatim}
+
+	\subsection*{3.6}
+		Στον R3 εκτελούμε \verb|do show ip route|. Ο R3 έχει μάθει δυναμικά τα δίκτυα:
+		
+		\begin{verbatim}
+			172.17.17.0/30
+			192.168.1.0/24
+			192.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{3.7}
+		Στο PC1 εκτελούμε \verb|do ping 192.168.2.2|. Το ping είναι επιτυχές, οπότε μπορούμε να επικοινωνήσουμε από το PC1 με το PC2.
+
+	\subsection*{3.8}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			interface em2 
+			ip address 192.168.3.1/24
+		\end{verbatim}
+
+	\subsection*{3.9}
+		Στους R1 και R2 εκτελούμε \verb|do show ip route|. Δεν έχουν αλλάξει οι δυναμικές εγγραφές.
+
+	\subsection*{3.10}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			network 192.168.3.0/24
+		\end{verbatim}
+
+	\subsection*{3.11}
+		Στους R1 και R2 εκτελούμε \verb|do show ip route|. Πλέον τόσο στον R1 όσο και στον R2 έχει προστεθεί μία νέα δυναμική εγγραφή που αφορά το δίκτυο \verb|192.168.3.0/24|.
+
+	\subsection*{3.12}
+		Ναι είναι, αφού στέλνονται κατευθείαν ενημερώσεις στους R1 και R2 σχετικές με την προσθήκη της νέας διαδρομής.
+
+	\subsection*{3.13}
+		Στον R3 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			
+			no network 172.17.17.4/30
+			no network 172.17.17.8/30
+			no network 192.168.3.0/24
+			
+			network 0.0.0.0/0
+		\end{verbatim}
+		
+		Το δίκτυο \verb|0.0.0.0/0| υποδηλώνει ότι ενεργοποιείται το RIP σε όλα τα υποδίκτυα που είναι συνδεδεμένα στον R3.
+
+	\subsection*{3.14}
+		Στον R3 εκτελούμε \verb|do show ip rip status| και βλέπουμε ότι το RIP είναι ενεργοποιημένο στις διεπαφές \verb|em0|, \verb|em1|, \verb|em2| και \verb|lo0|. Στη δρομολόγηση συμμετέχει το δίκτυο \verb|0.0.0.0/0|.
+
+	\subsection*{3.15}
+		Στους R1 και R2 εκτελούμε \verb|do show ip route|. Δεν υπάρχει κάποια αλλαγή.
+
+	\subsection*{3.16}
+		Στον R3 εκτελούμε \verb|tcpdump -vni em0| για να καταγράψουμε την κίνηση στο WAN2. Ο R3 διαφημίζει:
+		
+		\begin{verbatim}
+			172.17.17.8/30
+			192.168.2.0/24
+			192.168.3.0/24
+		\end{verbatim}
+
+	\subsection*{3.17}
+		Όχι δεν υπάρχει, γιατί σύμφωνα με τον μηχανισμό του διαιρεμένου ορίζοντα, οι δρομολογητές δεν διαφημίζουν μία διαδρομή στη διεπαφή από όπου την έμαθαν. Συγκεκριμένα, ο R3 δεν διαφημίζει στο WAN2 τη διαδρομή που αφορά το LAN1, γιατί και ο ίδιος την έμαθε μέσω του WAN2.
+
+	\subsection*{3.18}
+		Συμπεραίνουμε ότι όταν εισάγουμε το δίκτυο \verb|0.0.0.0/0|, στα μηνύματα RIP περιλαμβάνονται όλα τα δίκτυα που είναι συνδεδεμένα με τον δρομολογητή, λαμβάνοντας υπόψιν τους περιορισμούς που αναφέρθηκαν στο 3.17.
+		
+	\subsection*{3.19}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			tcpdump -vni em1 "udp port 520 && src 172.17.17.2"      # for WAN1
+			tcpdump -vni em2 "udp port 520 && src 172.17.17.6"      # for WAN2
+		\end{verbatim}
+		
+		Τόσο ο R2 όσο και ο R3 διαφημίζουν κόστος 1 για τη διαδρομή προς το WAN3. \\
+		
+		Στον R1 εκτελούμε \verb|do show ip route| και βλέπουμε ότι έχει διαλέξει τη διαδρομή μέσω του R2.
+
+	\subsection*{3.20}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			tcpdump -vni em1 "udp port 520 && src 172.17.17.1"      # for WAN1
+			tcpdump -vni em2 "udp port 520 && src 172.17.17.5"      # for WAN2
+		\end{verbatim}
+		
+		Διαφήμιση για το \verb|172.17.17.8/30| περιέχεται στο WAN2, ενώ δεν περιέχεται στο WAN1, εξαιτίας του μηχανισμού διαιρεμένου ορίζοντα, αφού ο R1 έτυχε να μάθει τη διαδρομή προς το \verb|172.17.17.8/30| πρώτα από τον R2 (τον οποίο και έχει επιλέξει σαν επόμενο βήμα). Ο λόγος που δεν αλλάζει η προτίμηση του R1 από τον R2 στον R3 είναι επειδή σύμφωνα με το RFC 2453, διαδρομές ίδιου κόστους στον ίδιο προορισμό από διαφορετικές πηγές δεν προκαλούν αλλαγή στον πίνακα δρομολόγησης. Σημειώνεται ότι υπάρχει μία αναφορά στο παραπάνω έγγραφο για προτίμηση άλλων διαδρομών αν η τρέχουσα εγγραφή έχει ξεπεράσει το ήμισυ της ζωής της, αλλά, εκτός του ότι είναι προαιρετική, επειδή ο R2 στέλνει συνεχώς ενημερώσεις στον R1, η τρέχουσα εγγραφή παραμένει πάντα επαρκώς πρόσφατη.  
+
+\section*{Άσκηση 4: Αλλαγές στην τοπολογία, σφάλμα καλωδίου και RIP}
+
+	\subsection*{4.1}
+		Στο PC3 εκτελούμε:
+		
+		\begin{verbatim}
+			vtysh
+			configure terminal
+			hostname PC3
+			interface em0
+			ip address 192.168.3.2/24
+			ip route 0.0.0.0/0 192.168.3.1
+		\end{verbatim}
+
+	\subsection*{4.2}
+		Στο PC1 εκτελούμε \verb|do ping 192.168.2.2|. Τα PC1 και PC2 επικοινωνούν κανονικά.
+
+	\subsection*{4.3}
+		Στο PC2 εκτελούμε \verb|do ping 192.168.3.2|. Τα PC1 και PC2 επικοινωνούν κανονικά.
+
+	\subsection*{4.4}
+		Στο PC3 εκτελούμε \verb|do ping 192.168.1.2|. Τα PC1 και PC2 επικοινωνούν κανονικά.
+
+	\subsection*{4.5}
+		Στους R1,2,3 εκτελούμε \verb|do show ip route|. Έχουμε:
+		
+		\begin{verbatim}
+			R1 routing table:
+			
+			C>* 127.0.0.0/8 is directly connected, lo0
+			C>* 172.17.17.0/30 is directly connected, em1
+			C>* 172.17.17.4/30 is directly connected, em2
+			R>* 172.17.17.8/30 [120/2] via 172.17.17.2, em1
+			C>* 192.168.1.0/24 is directly connected, em0
+			R>* 192.168.2.0/24 [120/2] via 172.17.17.2, em1
+			R>* 192.168.3.0/24 [120/2] via 172.17.17.6, em2
+			
+			R2 routing table:
+			
+			C>* 127.0.0.0/8 is directly connected, lo0
+			C>* 172.17.17.0/30 is directly connected, em0
+			C>* 172.17.17.4/30 [120/2] via 172.17.17.1, em0
+			R>* 172.17.17.8/30 is directly connected, em1
+			R>* 192.168.1.0/24 [120/2] via 172.17.17.1, em0
+			C>* 192.168.2.0/24 is directly connected, em2
+			R>* 192.168.3.0/24 [120/2] via 172.17.17.10, em1
+
+			R3 routing table:
+			
+			C>* 127.0.0.0/8 is directly connected, lo0
+			R>* 172.17.17.0/30 [120/2] via 172.17.17.5, em0
+			C>* 172.17.17.4/30 is directly connected, em0
+			C>* 172.17.17.8/30 is directly connected, em1
+			R>* 192.168.1.0/24 [120/2] via 172.17.17.5, em0
+			R>* 192.168.2.0/24 [120/2] via 172.17.17.9, em1
+			C>* 192.168.3.0/24 is directly connected, em2
+		\end{verbatim}
+
+	\subsection*{4.6}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:
+			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			R2:
+			
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			R3:
+			
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+		\end{verbatim}
+
+	\subsection*{4.7}
+		Αποσυνδέουμε τα άκρα του WAN1 και παρατηρούμε τις εξής αλλαγές:
+		
+		\begin{itemize}
+			\item Σε όλους τους πίνακες δρομολόγησης έχουν αφαιρεθεί οι εγγραφές που αφορούν το δίκτυο \verb|172.17.17.0/30|.
+			\item Στον πίνακα του R1, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.2| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.6|, και αντίστοιχα η \verb|em1| σε \verb|em2|.
+			\item Στον πίνακα του R2, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.1| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.10|, και αντίστοιχα η \verb|em0| σε \verb|em1|. 
+			\item Η διαδρομή για το \verb|192.168.2.0/24| στον πίνακα του R1 έχει πλέον κόστος 3, όπως και η διαδρομή για το \verb|192.168.1.0/24| στον πίνακα του R2.
+		\end{itemize}
+
+	\subsection*{4.8}
+		Ελέγχουμε:
+		
+		\begin{verbatim}
+			PC1 <--> PC2: do ping 192.168.2.2 (from PC1)
+			PC1 <--> PC3: do ping 192.168.3.2 (from PC1)
+			PC2 <--> PC3: do ping 192.168.3.2 (from PC2)
+		\end{verbatim}
+		
+		Τα PC1,2,3 επικοινωνούν μεταξύ τους.
+
+	\subsection*{4.9}
+		Επανασυνδέουμε τα άκρα του WAN1, αποσυνδέουμε τα άκρα του WAN2 και παρατηρούμε τις εξής αλλαγές:
+		
+		\begin{itemize}
+			\item Σε όλους τους πίνακες δρομολόγησης έχουν αφαιρεθεί οι εγγραφές που αφορούν το δίκτυο \verb|172.17.17.4/30|.
+			\item Στον πίνακα του R1, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.6| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.2|, και αντίστοιχα η \verb|em2| σε \verb|em1|.
+			\item Στον πίνακα του R3, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.5| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.9|, και αντίστοιχα η \verb|em0| σε \verb|em1|. 
+			\item Η διαδρομή για το \verb|192.168.3.0/24| στον πίνακα του R1 έχει πλέον κόστος 3, όπως και η διαδρομή για το \verb|192.168.1.0/24| στον πίνακα του R3.
+		\end{itemize}
+
+	\subsection*{4.10}
+		Ελέγχουμε:
+		
+		\begin{verbatim}
+			PC1 <--> PC2: do ping 192.168.2.2 (from PC1)
+			PC1 <--> PC3: do ping 192.168.3.2 (from PC1)
+			PC2 <--> PC3: do ping 192.168.3.2 (from PC2)
+		\end{verbatim}
+		
+		Τα PC1,2,3 επικοινωνούν μεταξύ τους.
+
+	\subsection*{4.11}
+		Επανασυνδέουμε τα άκρα του WAN2, αποσυνδέουμε τα άκρα του WAN3 και παρατηρούμε τις εξής αλλαγές:
+		
+		\begin{itemize}
+			\item Σε όλους τους πίνακες δρομολόγησης έχουν αφαιρεθεί οι εγγραφές που αφορούν το δίκτυο \verb|172.17.17.8/30|.
+			\item Στον πίνακα του R2, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.10| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.1|, και αντίστοιχα η \verb|em1| σε \verb|em0|.
+			\item Στον πίνακα του R3, όσες εγγραφές είχαν ως επόμενο βήμα τη διεπαφή \verb|172.17.17.9| έχουν αλλάξει το επόμενο βήμα σε \verb|172.17.17.5|, και αντίστοιχα η \verb|em1| σε \verb|em0|. 
+			\item Η διαδρομή για το \verb|192.168.3.0/24| στον πίνακα του R2 έχει πλέον κόστος 3, όπως και η διαδρομή για το \verb|192.168.2.0/24| στον πίνακα του R3.
+		\end{itemize}
+
+	\subsection*{4.12}
+		Ελέγχουμε:
+			
+			\begin{verbatim}
+				PC1 <--> PC2: do ping 192.168.2.2 (from PC1)
+				PC1 <--> PC3: do ping 192.168.3.2 (from PC1)
+				PC2 <--> PC3: do ping 192.168.3.2 (from PC2)
+			\end{verbatim}
+			
+			Τα PC1,2,3 επικοινωνούν μεταξύ τους.
+
+	\subsection*{4.13}
+		Επανασυνδέουμε τα άκρα του WAN3 και εκτελούμε από τον PC1 \verb|do ping 192.168.2.2|. Ύστερα αποσυνδέουμε τα άκρα του WAN1. Για να εγκατασταθεί η νέα διαδρομή χρειάστηκαν \textasciitilde20 δευτερόλεπτα.
+
+	\subsection*{4.14}
+		Επανασυνδέουμε τα άκρα του WAN1. Μπορούμε να καταλάβουμε ότι η νέα διαδρομή (PC1 $\rightarrow$ R1 $\rightarrow$ R3 $\rightarrow$ R2 $\rightarrow$ PC2) ξαναέδωσε τη θέση της στην παλιά (PC1 $\rightarrow$ R1 $\rightarrow$ R2 $\rightarrow$ PC2), επειδή πλέον η τιμή του TTL στα μηνύματα ICMP Reply είναι 62 αντί για 61. Αυτό ισχύει διότι η παλιά διαδρομή είναι μικρότερη σε μήκος από την καινούργια κατά ένα hop.
+
+	\subsection*{4.15}
+		Στον R1 εκτελούμε \verb|do show ip rip|. Έχουμε:
+		
+		\begin{verbatim}
+			Network           Metric
+			172.17.17.0/30    1
+			192.168.2.0/24    2
+		\end{verbatim}
+
+	\subsection*{4.16}
+		Παριστάνει το \verb|timeout| (default τιμή 180 δευτερόλεπτα), μετά τη λήξη του οποίου οι εγγραφές παύουν να ισχύουν, και το οποίο ανανεώνεται κάθε φορά που έρχεται ενημέρωση για τη συγκεκριμένη εγγραφή.
+
+	\subsection*{4.17}
+		Αποσυνδέουμε τα άκρα του WAN1 και αμέσως ξαναεκτελούμε στον R1 \verb|do show ip rip|. Έχουμε:
+		
+		\begin{verbatim}
+			Network           Metric    Time
+			172.17.17.0/30    16        01:59
+			192.168.2.0/24    16        01:59
+		\end{verbatim}
+		
+	\subsection*{4.18}
+		Μετά από λίγο η διαδρομή προς το \verb|192.168.2.0/24| έχει πλέον:
+		
+		\begin{itemize}
+			\item Στο πεδίο "Next Hop" τη διεπαφή \verb|172.17.17.6| αντί για \verb|172.17.17.2|
+			\item Το πεδίο "Metric" ίσο με 3
+			\item Στο πεδίο "From" τη διεπαφή \verb|172.17.17.6| αντί για \verb|172.17.17.2|
+		\end{itemize} 
+
+	\subsection*{4.19}
+		Μετά από δύο λεπτά η διαδρομή προς το \verb|172.17.17.0/30| διαγράφεται από τον πίνακα διαδρομών.
+
+	\subsection*{4.20}
+		Παριστάνει το \verb|garbage| (default τιμή 120 δευτερόλεπτα), με την λήξη του οποίου οι εγγραφές που δεν ισχύουν πλέον διαγράφονται από τον πίνακα διαδρομών.
+
+	\subsection*{4.21}
+		Επανασυνδέουμε τα άκρα του WAN1 και εκτελούμε στον R1:
+		
+		\begin{verbatim}
+			tcpdump -vni em1 "udp port 520 && src 172.17.17.1"   # for WAN1
+			tcpdump -vni em2 "udp port 520 && src 172.17.17.5"   # for WAN2
+		\end{verbatim}
+		
+		Διαφήμιση για το \verb|172.17.17.8/30| περιλαμβάνεται στα μηνύματα RIP του WAN1. Αυτό συμβαίνει διότι η επαναφορά του WAN1 δεν αλλάζει τον πίνακα διαδρομών του R1, αφού η διαδρομή για το \verb|172.17.17.8/30| μέσω του R2 έχει κόστος 2, όπως και η ισχύουσα διαδρομή μέσω του R3. Έτσι, σύμφωνα με το μηχανισμό του διαιρεμένου ορίζοντα, ο R1 δεν διαφημίζει στο WAN2 τη διαδρομή για το \verb|172.17.17.8/30|, επειδή από εκεί την έμαθε εξαρχής.
+
+\section*{Άσκηση 5: Τοπολογία με πολλαπλές WAN διασυνδέσεις}
+	\subsection*{Κατασκευή του δικτύου}
+		\subsubsection*{Αντιστοίχιση των network adapters σε LAN/WAN}
+			\begin{verbatim}
+				-------------PC1-------------
+				Network Adapter 1 (em0): LAN1
+				
+				-------------PC2-------------
+				Network Adapter 1 (em0): LAN2
+					
+				-------------R1--------------
+				Network Adapter 1 (em0): LAN1
+				Network Adapter 2 (em1): WAN1
+				Network Adapter 3 (em2): WAN3
+					
+				-------------R2--------------
+				Network Adapter 1 (em0): LAN2
+				Network Adapter 2 (em1): WAN2
+				Network Adapter 3 (em2): WAN4
+				
+				-------------C1--------------
+				Network Adapter 1 (em0): CORE
+				Network Adapter 2 (em1): WAN1
+				Network Adapter 3 (em2): WAN2				
+				
+				-------------C2--------------
+				Network Adapter 1 (em0): CORE
+				Network Adapter 2 (em1): WAN3
+				Network Adapter 3 (em2): WAN4
+			\end{verbatim}
+			
+		\subsubsection*{Ορισμός ονομάτων και διευθύνσεων IP μέσω cli}
+			\begin{verbatim}
+				-----------PC1-----------
+				vtysh 
+				configure terminal
+				
+				hostname PC1
+				
+				interface em0
+				ip address 192.168.1.2/24
+				
+				-----------PC2-----------
+				vtysh
+				configure terminal
+				
+				hostname PC2
+				
+				interface em0
+				ip address 192.168.2.2/24
+				
+				-----------R1------------
+				cli
+				configure terminal
+				
+				hostname R1
+				
+				interface em0
+				ip address 192.168.1.1/24
+				
+				interface em1
+				ip address 10.0.1.1/30
+				
+				interface em2
+				ip address 10.0.1.5/30
+				
+				interface lo0
+				ip address 172.22.1.1/32
+				
+				-----------R2------------
+				cli
+				configure terminal
+				
+				hostname R2
+				
+				interface em0
+				ip address 192.168.2.1/24
+				
+				interface em1
+				ip address 10.0.2.1/30
+				
+				interface em2
+				ip address 10.0.2.5/30
+				
+				interface lo0
+				ip address 172.22.2.1/32
+				
+				-----------C1------------
+				cli
+				configure terminal
+				
+				hostname C1
+				
+				interface em0
+				ip address 10.0.0.1/30
+				
+				interface em1
+				ip address 10.0.1.2/30
+				
+				interface em2
+				ip address 10.0.2.2/30
+				
+				interface lo0
+				ip address 172.22.1.2/32
+				
+				-----------C2------------
+				cli
+				configure terminal
+				
+				hostname C2
+				
+				interface em0
+				ip address 10.0.0.2/30
+				
+				interface em1
+				ip address 10.0.1.6/30
+				
+				interface em2
+				ip address 10.0.2.6/30
+				
+				interface lo0
+				ip address 172.22.2.2/32
+			\end{verbatim}
+			
+		\subsubsection*{Διαγραφή προκαθορισμένης διαδρομής στα PC}
+			Δεν χρειάζεται, αφού δεν θα χρησιμοποιήσουμε τα PC από την προηγούμενη άσκηση.
+			
+	\subsection*{5.1}
+		Στους R1, R2, C1, C2 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			network 0.0.0.0/0
+		\end{verbatim}
+
+	\subsection*{5.2}
+		Στον R1 εκτελούμε \verb|do show ip route rip|. Εμφανίζονται 7 δυναμικές εγγραφές.
+
+	\subsection*{5.3}
+		Στον R2 εκτελούμε \verb|do show ip route rip|. Εμφανίζονται 7 δυναμικές εγγραφές.
+		
+
+	\subsection*{5.4}
+		Στον C1 εκτελούμε \verb|do show ip route rip|. Εμφανίζονται 7 δυναμικές εγγραφές.
+		
+
+	\subsection*{5.5}
+		Στον C2 εκτελούμε \verb|do show ip route rip|. Εμφανίζονται 7 δυναμικές εγγραφές.
+		
+
+	\subsection*{5.6}
+		Στον R1 εκτελούμε \verb|do show ip rip status| και βλέπουμε ότι συμμετέχει με το δίκτυο \verb|0.0.0.0|, δηλαδή όλα τα δίκτυα στα οποία έχει συνδεδεμένη διεπαφή. 
+
+	\subsection*{5.7}
+		Στον R1 εκτελούμε \verb|tcpdump -vni em0 "udp port 520"|. Ο R1 διαφημίζει τα δίκτυα:
+		
+		\begin{verbatim}
+			10.0.0.0/30
+			10.0.1.0/30
+			10.0.1.4/30
+			10.0.2.0/30
+			10.0.2.4/30
+			172.22.1.1/32
+			172.22.1.2/32
+			172.22.2.1/32
+			172.22.2.2/32
+			192.168.2.0/24
+		\end{verbatim}
+
+	\subsection*{5.8}
+		Στον PC1 εκτελούμε \verb|do show ip route|. Δεν υπάρχουν δυναμικές εγγραφές.
+
+	\subsection*{5.9}
+		Δεν υπάρχει προκαθορισμένη διαδρομή στο PC1. Εκτελούμε στο PC1:
+		
+		\begin{verbatim}
+			router rip
+			network em0
+		\end{verbatim}
+
+	\subsection*{5.10}
+		Περιέχει 10 δυναμικές εγγραφές.
+
+	\subsection*{5.11}
+		Δεν υπάρχει προκαθορισμένη διαδρομή στο PC2. Εκτελούμε στο PC2:
+		
+		\begin{verbatim}
+			router rip
+			network em0
+		\end{verbatim}
+
+	\subsection*{5.12}
+		Υπάρχουν 2 διαδρομές ελαχίστου κόστους μεταξύ LAN1 και LAN2:
+		
+		\begin{itemize}
+			\item \textbf{Διαδρομή Α:} PC1 $\rightarrow$ R1 $\rightarrow$ C1 $\rightarrow$ R2 $\rightarrow$ PC2  (και η αντίστροφή της)
+			\item \textbf{Διαδρομή Β:} PC1 $\rightarrow$ R1 $\rightarrow$ C2 $\rightarrow$ R2 $\rightarrow$ PC2 (και η αντίστροφή της)
+		\end{itemize}
+
+	\subsection*{5.13}
+		Στον PC1 εκτελούμε \verb|do traceroute 192.168.2.2|. Βλέπουμε ότι ακολουθείται η διαδρομή \textbf{A} (βλ. 5.12).
+
+	\subsection*{5.14}
+		Στον PC2 εκτελούμε \verb|do traceroute 192.168.1.2|. Βλέπουμε ότι ακολουθείται η διαδρομή \textbf{Α} (βλ. 5.12).
+
+	\subsection*{5.15}
+		Ναι, χρησιμοποιείται η ίδια διαδρομή.
+
+	\subsection*{5.16}
+		Εκτελούμε στο PC1:
+		
+		\begin{verbatim}
+			do ping 172.22.1.1
+			do ping 172.22.1.2
+			do ping 172.22.2.1
+			do ping 172.22.2.2
+		\end{verbatim}
+		
+		Όλα τα ping είναι επιτυχή, οπότε μπορούμε να επικοινωνήσουμε με όλες τις loopback διαχείρισης.
+
+	\subsection*{5.17}
+		Εκτελούμε στο PC2:
+		
+		\begin{verbatim}
+			do ping 172.22.1.1
+			do ping 172.22.1.2
+			do ping 172.22.2.1
+			do ping 172.22.2.2
+		\end{verbatim}
+		
+		Όλα τα ping είναι επιτυχή, οπότε μπορούμε να επικοινωνήσουμε με όλες τις loopback διαχείρισης.
+
+	\subsection*{5.18}
+		\begin{itemize}
+			\item WAN1: Μπορεί να αποκοπεί.
+			\item WAN2: Μπορεί να αποκοπεί.
+			\item WAN3: Μπορεί να αποκοπεί.
+			\item WAN4: Μπορεί να αποκοπεί.
+			\item CORE: Μπορεί να αποκοπεί.
+		\end{itemize}
+
+	\subsection*{5.19}
+		\begin{itemize}
+			\item WAN1, WAN2 και CORE: Μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.20}
+		\begin{itemize}
+			\item WAN1 και WAN3: Δεν μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.21}
+		\begin{itemize}
+			\item WAN2 και WAN3: Μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.22}
+		\begin{itemize}
+			\item WAN2 και WAN4: Δεν μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.23}
+		\begin{itemize}
+			\item WAN3, WAN4 και CORE: Μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.24}
+		\begin{itemize}
+			\item WAN1 και WAN4: Μπορούν να αποκοπούν.
+		\end{itemize}
+
+	\subsection*{5.25}
+		Εκτελούμε:
+		
+		\begin{verbatim}
+			R1:
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			interface lo0
+			link-detect
+			
+			R2:
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			interface lo0
+			link-detect
+			
+			C1:
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			interface lo0
+			link-detect
+			
+			C2:
+			interface em0
+			link-detect
+			
+			interface em1
+			link-detect
+			
+			interface em2
+			link-detect
+			
+			interface lo0
+			link-detect
+		\end{verbatim}
+		
+		Ύστερα εκτελούμε στο PC1:
+		
+		\begin{verbatim}
+			do ping 172.22.2.2
+		\end{verbatim}
+		
+		Αποσυνδέουμε το CORE και μετά το WAN3. Στην έξοδο του ping παρατηρούμε να εμφανίζεται συνέχεια "No route to host" για κάποιο διάστημα, μετά το οποίο το ping λειτουργεί και πάλι κανονικά. \\
+		
+		Αυτό συμβαίνει διότι με το που διακόπτεται η ζεύξη WAN3, η εγγραφή στον πίνακα δρομολόγησης του R1 με προορισμό την \verb|172.22.2.2| διαγράφεται, αφού διέρχεται από το WAN3. Ο PC1 ενημερώνεται για την διακοπή της ζεύξης από τον R1, ο οποίος διαφημίζει ότι η διαδρομή αυτή έχει πλέον Metric = 16, οπότε την αφαιρεί κι αυτός από τον πίνακα δρομολόγησης του, εξού και το μήνυμα "No route to host". Αφού περάσει ένα μικρό χρονικό διάστημα, ο PC1 ενημερώνεται για την εναλλακτική διαδρομή (PC1 $\rightarrow$ R1 $\rightarrow$ C1 $\rightarrow$ C2), ενημερώνει τον πίνακα δρομολόγησής του και μπορεί ξανά να επικοινωνήσει με επιτυχία.
+
+	\subsection*{5.26}
+		Περνούν \textasciitilde25 δευτερόλεπτα μέχρι να επανέλθει η επικοινωνία.
+
+\section*{Άσκηση 6: RIP και αναδιανομή διαδρομών}
+
+	\subsection*{6.1}
+		Στον C1 εκτελούμε:
+		
+		\begin{verbatim}
+			ip route 4.0.0.0/8 172.22.1.2
+		\end{verbatim}
+
+	\subsection*{6.2}
+		Στον C1 εκτελούμε:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Η εγγραφή έχει τοποθετηθεί επιτυχώς.
+
+	\subsection*{6.3}
+		Στους PC1, PC2, R1, R2, C2 εκτελούμε \verb|do show ip route|. Η εγγραφή δεν έχει τοποθετηθεί.
+
+	\subsection*{6.4}
+		Στον C1 εκτελούμε:
+		
+		\begin{verbatim}
+			router rip
+			redistribute static
+		
+			do show ip route
+		\end{verbatim}
+		
+		Δεν έχει αλλάξει κάτι στον πίνακα δρομολόγησης του C1.
+
+	\subsection*{6.5}
+		Στους PC1, PC2, R1, R2, C2 εκτελούμε \verb|do show ip route|. Η εγγραφή έχει τοποθετηθεί στους πίνακες ως δυναμική.
+
+	\subsection*{6.6}
+		Στον C2 εκτελούμε:
+		
+		\begin{verbatim}
+			ip route 0.0.0.0/0 172.22.2.2
+		\end{verbatim}
+
+	\subsection*{6.7}
+		Στον C2 εκτελούμε \verb|do show ip route|. Η εγγραφή έχει τοποθετηθεί στον πίνακα του C2.
+
+	\subsection*{6.8}
+		Στους PC1, PC2, R1, R2, C1 εκτελούμε \verb|do show ip route|. Η εγγραφή δεν έχει τοποθετηθεί.
+
+	\subsection*{6.9}
+		Στον C2 εκτελούμε: 
+		
+		\begin{verbatim}
+			router rip
+			default-information originate
+			
+			do show ip route
+		\end{verbatim}
+		
+		Δεν έχει αλλάξει κάτι στον πίνακα του C2.
+
+	\subsection*{6.10}
+		Στους PC1, PC2, R1, R2, C1 εκτελούμε \verb|do show ip route|. Βλέπουμε ότι έχει προστεθεί μία δυναμική εγγραφή στον πίνακα κάθε μηχανήματος η οποία αφορά την προεπιλεγμένη διαδρομή, με επόμενο βήμα τη διεπαφή του επόμενου δρομολογητή της διαδρομής προς το C2.
+
+	\subsection*{6.11}
+		Στον C2 εκτελούμε:
+		
+		\begin{verbatim}
+			no default-information originate
+		\end{verbatim}
+		
+		Ύστερα στον C1 εκτελούμε:
+		
+		\begin{verbatim}
+			ip route 0.0.0.0/0 10.0.0.2
+			
+			router rip
+			default-information originate
+		\end{verbatim}
+
+	\subsection*{6.12}
+		Στον πίνακα του C2 προστίθεται μία μη-επιλεγμένη δυναμική εγγραφή σχετικά με την προεπιλεγμένη διαδρομή μέσω του C1, η οποία έχει προκύψει μέσω της διαφήμισης του C1 (εντολή default-information originate). Η εγγραφή δεν έχει επιλεγεί επειδή έχει μεγαλύτερη διαχειριστική απόσταση από την αντίστοιχη στατική (120 έναντι 1).
+
+	\subsection*{6.13}
+		Εκτελούμε στον C2: 
+		
+		\begin{verbatim}
+			no ip route 0.0.0.0/0 172.22.2.2
+			
+			do show ip route
+		\end{verbatim}
+		
+		Η δυναμική εγγραφή που αναφέραμε προηγουμένως είναι πλέον επιλεγμένη.
+
+	\subsection*{6.14}
+		Εκτελούμε στα PC1, PC2:
+		
+		\begin{verbatim}
+			do show ip route
+		\end{verbatim}
+		
+		Ο πίνακας δρομολόγησης έχει 13 εγγραφές.
+
+	\subsection*{6.15}
+		Στον PC1 εκτελούμε \verb|do ping 4.4.4.4|. Λαμβάνουμε "Time to live exceeded". Αυτό συμβαίνει διότι το πακέτο, με βάση τις εγγραφές του πίνακα δρομολόγησης με προορισμό το \verb|4.0.0.0/8| προωθείται από τον PC1 στον R1, από τον R1 στον C1 και από τον C1 στη loopback του C1, με αποτέλεσμα να εγκλωβίζεται στον C1 και να μηδενίζεται το TTL χωρίς το μήνυμα να φτάνει στον προορισμό του, εξού και το μήνυμα "Time to live exceeded" που λαμβάνει ο PC1.
+
+	\subsection*{6.16}
+		Στον PC1 εκτελούμε \verb|do ping 5.5.5.5|. Λαμβάνουμε "Time to live exceeded". Αυτό συμβαίνει διότι το πακέτο, με βάση τις εγγραφές του πίνακα δρομολόγησης με προορισμό το \verb|0.0.0.0/0| (προεπιλεγμένη διαδρομή), προωθείται από τον PC1 στον R1, από τον R1 στον C1. Από 'κει και πέρα εγκλωβίζεται στον βρόχο C1-C2, αφού ο C1 προωθεί στον C2 και ο C2 στον C1, με αποτέλεσμα να μηδενίζεται το TTL χωρίς το μήνυμα να φτάνει στον προορισμό του, εξού και το μήνυμα "Time to live exceeded" που λαμβάνει ο PC1.
+
+	\subsection*{6.17}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			access-list private permit 192.168.0.0/16
+			access-list private deny any
+		\end{verbatim}
+
+	\subsection*{6.18}
+		Στον R1 εκτελούμε:
+		
+		\begin{verbatim}
+			password ntua
+			exit
+			exit
+		\end{verbatim}
+
+	\subsection*{6.19} 
+		Στο PC2 εκτελούμε \verb|telnet 10.0.1.5 2602|. 
+
+	\subsection*{6.20}
+		Εκτελούμε στο PC2 που είναι συνδεμένο μέσω telnet στον R1:
+		
+		\begin{verbatim}
+			enable
+			configure terminal
+			router rip
+			distribute-list private out em0
+		\end{verbatim}
+		
+	\subsection*{6.21}
+		Αρχικά εκτελούμε στον PC1 \verb|do show ip route| και δεν παρατηρούμε κάποια διαφορά. Ύστερα από τρία λεπτά όμως, οι περισσότερες εγγραφές έχουν διαγραφεί, και έχουν μείνει μόνο δύο εγγραφές, μία που αφορά το ίδιο το \verb|192.168.1.0/24|, και μία δυναμική που αφορά το \verb|192.168.2.0/24|.
+
+	\subsection*{6.22}
+		Στον PC1 εκτελούμε \verb|do show ip rip|. Αρχικά οι εγγραφές παραμένουν, αλλά ύστερα από δύο λεπτά διαγράφονται όλες εκτός από τις διαδρομές προς τα \verb|192.168.1.0/24| και \verb|192.168.2.0/24|, αφού έχει περάσει το διάστημα \verb|garbage| (προεπιλεγμένη τιμή 2 λεπτά).
+
+\end{document}
